@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campo Elétrico - A Noite Estrelada</title>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body { margin: 0; padding: 0; background: #050d1a; overflow-x: hidden; }
+  </style>
+
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useRef, useEffect, useCallback } = React;
+
+    const W = 800, H = 700, SKY = 465;
+
+    const PAL = {
+      skyDeep: "#0a1628", skyMid: "#0f2044", skyLight: "#1a3a6a",
+      s1: "#162e5a", s2: "#1e4a7a", s3: "#2a6aaa", s4: "#4a90cc", s5: "#7ab8f0", s6: "#a0d4ff",
+      yellow: "#f0d848", orange: "#e8a830", highlightY: "#c8d86a",
+      positive: "#f0d848", negative: "#4a90ee", windowGlow: "#e8c840",
+      forceResultant: "#ff3b3b",
+    };
+
+    const PRESETS = [
+      { x: 260, y: 175, charge: 600, positive: true, name: "Carga α" },
+      { x: 580, y: 180, charge: 500, positive: false, name: "Carga β" },
+      { x: 420, y: 340, charge: 700, positive: true, name: "Carga γ" },
+    ];
+
+    const initCharges = () => PRESETS.map(c => ({
+      ...c, color: c.positive ? PAL.positive : PAL.negative, radius: 12 + Math.abs(c.charge) / 45,
+    }));
+
+    /* ── Física: Campo Elétrico ── */
+    function eField(x, y, charges) {
+      let fx = 0, fy = 0;
+      for (const c of charges) {
+        const dx = x - c.x, dy = y - c.y;
+        const d2 = dx * dx + dy * dy + 150;
+        const d = Math.sqrt(d2);
+        const f = (c.positive ? 1 : -1) * Math.abs(c.charge) / d2;
+        fx += f * dx / d; fy += f * dy / d;
+      }
+      return { fx, fy };
+    }
+
+    /* ── Física: Força Resultante (Lei de Coulomb) ── */
+    function getForceOnCharge(targetIndex, charges) {
+      let fx = 0, fy = 0;
+      const target = charges[targetIndex];
+      const qTarget = (target.positive ? 1 : -1) * Math.abs(target.charge);
+
+      for (let i = 0; i < charges.length; i++) {
+        if (i === targetIndex) continue;
+        const c = charges[i];
+        const qSource = (c.positive ? 1 : -1) * Math.abs(c.charge);
+        const dx = target.x - c.x; 
+        const dy = target.y - c.y;
+        const d2 = dx * dx + dy * dy + 150; 
+        const d = Math.sqrt(d2);
+
+        const f = (qSource * qTarget) / d2;
+        fx += f * dx / d;
+        fy += f * dy / d;
+      }
+      return { fx, fy };
+    }
+
+    /* ── Traçado de Linhas ── */
+    function traceFieldLines(charges) {
+      const lines = [];
+      const pos = charges.filter(c => c.positive);
+      const neg = charges.filter(c => !c.positive);
+      const sources = pos.length > 0 ? pos : [];
+      const totalQ = sources.reduce((s, c) => s + Math.abs(c.charge), 0) || 1;
+
+      for (const src of sources) {
+        const n = Math.round(14 + (Math.abs(src.charge) / totalQ) * 22);
+        for (let k = 0; k < n; k++) {
+          const ang = (k / n) * Math.PI * 2 + 0.15;
+          const r0 = src.radius + 5;
+          let cx = src.x + Math.cos(ang) * r0;
+          let cy = src.y + Math.sin(ang) * r0;
+          const pts = [{ x: cx, y: cy }];
+          let ended = false;
+          for (let s = 0; s < 350; s++) {
+            const { fx, fy } = eField(cx, cy, charges);
+            const mag = Math.sqrt(fx * fx + fy * fy) + 1e-9;
+            cx += (fx / mag) * 3.0;
+            cy += (fy / mag) * 3.0;
+            pts.push({ x: cx, y: cy });
+            for (const nq of neg) {
+              if ((cx - nq.x) ** 2 + (cy - nq.y) ** 2 < (nq.radius + 5) ** 2) { ended = true; break; }
+            }
+            if (ended) break;
+            for (const pq of pos) {
+              if (pq !== src && (cx - pq.x) ** 2 + (cy - pq.y) ** 2 < (pq.radius + 4) ** 2) { ended = true; break; }
+            }
+            if (ended) break;
+            if (cx < -50 || cx > W + 50 || cy < -50 || cy > SKY + 40) break;
+          }
+          if (pts.length > 5) lines.push({ pts, ended, fromPositive: true });
+        }
+      }
+
+      if (pos.length === 0 && neg.length > 0) {
+        for (const nq of neg) {
+          for (let k = 0; k < 20; k++) {
+            const ang = (k / 20) * Math.PI * 2;
+            let cx = Math.max(10, Math.min(W - 10, nq.x + Math.cos(ang) * 300));
+            let cy = Math.max(10, Math.min(SKY - 10, nq.y + Math.sin(ang) * 300));
+            const pts = [{ x: cx, y: cy }];
+            for (let s = 0; s < 350; s++) {
+              const { fx, fy } = eField(cx, cy, charges);
+              const mag = Math.sqrt(fx * fx + fy * fy) + 1e-9;
+              cx += (fx / mag) * 3.0;
+              cy += (fy / mag) * 3.0;
+              pts.push({ x: cx, y: cy });
+              if ((cx - nq.x) ** 2 + (cy - nq.y) ** 2 < (nq.radius + 5) ** 2) break;
+              if (cx < -50 || cx > W + 50 || cy < -50 || cy > SKY + 40) break;
+            }
+            if (pts.length > 5) lines.push({ pts, ended: true, fromPositive: false });
+          }
+        }
+      }
+      return lines;
+    }
+
+    function genAmbient(charges) {
+      const out = [];
+      for (let gx = 5; gx < W; gx += 38) {
+        for (let gy = 5; gy < SKY; gy += 38) {
+          let skip = false;
+          for (const c of charges) {
+            if ((gx - c.x) ** 2 + (gy - c.y) ** 2 < (c.radius + 55) ** 2) { skip = true; break; }
+          }
+          if (skip) continue;
+          let cx = gx + (Math.random() - 0.5) * 12;
+          let cy = gy + (Math.random() - 0.5) * 12;
+          const pts = [];
+          for (let i = 0; i < 5; i++) {
+            pts.push({ x: cx, y: cy });
+            const { fx, fy } = eField(cx, cy, charges);
+            const m = Math.sqrt(fx * fx + fy * fy) + 0.001;
+            cx += (-fy / m) * 5 + fx * 0.25;
+            cy += (fx / m) * 5 + fy * 0.25;
+          }
+          if (pts.length > 2) out.push(pts);
+        }
+      }
+      return out;
+    }
+
+    /* ── Desenha seta pequena ao longo da linha de campo ── */
+    function drawArrow(ctx, x, y, angle, size, color, alpha) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.moveTo(size, 0);
+      ctx.lineTo(-size * 0.6, -size * 0.5);
+      ctx.lineTo(-size * 0.3, 0);
+      ctx.lineTo(-size * 0.6, size * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
+    /* ── Funções de Pintura ── */
+    function paintAmbient(ctx, pts, color, width, time, phase) {
+      if (pts.length < 2) return;
+      const r = parseInt(color.slice(1, 3), 16), g = parseInt(color.slice(3, 5), 16), b = parseInt(color.slice(5, 7), 16);
+      const sh = Math.sin(time * 0.004 + phase) * 0.18 + 0.82;
+      const twinkle = Math.pow(Math.sin(time * 0.012 + phase * 2), 6);
+      const fl = Math.sin(time * 0.006 + phase * 1.2) * 8 + twinkle * 40;
+      
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      const alpha = Math.min(1, 0.14 * sh + twinkle * 0.3);
+      ctx.strokeStyle = `rgba(${Math.min(255, r + fl) | 0},${Math.min(255, g + fl * 0.5) | 0},${b},${alpha})`;
+      ctx.lineWidth = width;
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length - 1; i++) {
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, (pts[i].x + pts[i + 1].x) / 2, (pts[i].y + pts[i + 1].y) / 2);
+      }
+      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y); ctx.stroke();
+    }
+
+    function paintChargeGlow(ctx, s, time) {
+      const { x, y, radius, color, positive } = s;
+      const pulse = Math.sin(time * 0.003 + (positive ? 0 : 3)) * 0.1 + 1;
+
+      /* Glow externo (igual para ambas) */
+      for (let i = 6; i >= 0; i--) {
+        const rr = (radius + i * 13) * pulse;
+        const gr = ctx.createRadialGradient(x, y, 0, x, y, rr);
+        gr.addColorStop(0, color + Math.floor(0.045 * (6 - i) * 255).toString(16).padStart(2, "0"));
+        gr.addColorStop(1, "transparent");
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
+      }
+
+      if (positive) {
+        /* Carga positiva: gradiente com centro branco brilhante */
+        const cg = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        cg.addColorStop(0, "#fffef0"); cg.addColorStop(0.3, color); cg.addColorStop(0.7, color + "99"); cg.addColorStop(1, "transparent");
+        ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#fffdf5"; ctx.beginPath(); ctx.arc(x, y, radius * 0.27, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#332800";
+        ctx.font = `bold ${radius * 0.95}px Georgia`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("+", x, y + 1);
+      } else {
+        /* Carga negativa: bolinha azul sólida, sem centro branco */
+        const cg = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        cg.addColorStop(0, "#6ab0ff"); cg.addColorStop(0.45, color); cg.addColorStop(0.85, "#2a60aa"); cg.addColorStop(1, "#1a3a6a");
+        ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+        /* Sinal − branco */
+        ctx.fillStyle = "#fff";
+        ctx.font = `bold ${radius * 1.05}px Georgia`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("−", x, y + 1);
+      }
+    }
+
+    function paintStars(ctx, time) {
+      let rng = 77;
+      const r = () => { rng = (rng * 16807) % 2147483647; return rng / 2147483647; };
+      for (let i = 0; i < 120; i++) {
+        const x = r() * W, y = r() * SKY * 0.82, sz = 0.3 + r() * 1.8;
+        const tw = Math.sin(time * 0.004 + i * 2.3) * 0.35 + 0.65;
+        const twinkleStar = Math.pow(Math.sin(time * 0.008 + i * 5), 8); 
+        ctx.fillStyle = `rgba(255,253,220,${Math.min(1, tw * (0.2 + r() * 0.5) + twinkleStar * 0.6)})`;
+        ctx.beginPath(); ctx.arc(x, y, sz + twinkleStar * 0.5, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    function paintMoon(ctx, time) {
+      const mx = 680, my = 88, mr = 38;
+      const pulse = Math.sin(time * 0.002) * 2.5;
+      for (let i = 6; i >= 0; i--) {
+        const rr = mr + i * 13 + pulse;
+        const gr = ctx.createRadialGradient(mx, my, mr * 0.2, mx, my, rr);
+        gr.addColorStop(0, `rgba(255,253,220,${0.04 * (6 - i)})`); gr.addColorStop(1, "transparent");
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(mx, my, rr, 0, Math.PI * 2); ctx.fill();
+      }
+      const cg = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
+      cg.addColorStop(0, "#fffef0"); cg.addColorStop(0.5, PAL.yellow); cg.addColorStop(0.8, PAL.orange + "bb"); cg.addColorStop(1, "transparent");
+      ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = PAL.skyMid + "bb"; ctx.beginPath(); ctx.arc(mx + 12, my - 3, mr * 0.75, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function paintCypress(ctx, x, baseY, heightPx, widthPx, time) {
+      ctx.fillStyle = "#040a04";
+      ctx.beginPath();
+      ctx.moveTo(x - widthPx * 0.25, baseY);
+      ctx.bezierCurveTo(x - widthPx * 0.5, baseY - heightPx * 0.25, x - widthPx * 0.42, baseY - heightPx * 0.65, x - widthPx * 0.12, baseY - heightPx * 0.92);
+      ctx.quadraticCurveTo(x, baseY - heightPx * 1.02, x + widthPx * 0.08, baseY - heightPx * 0.9);
+      ctx.bezierCurveTo(x + widthPx * 0.38, baseY - heightPx * 0.62, x + widthPx * 0.45, baseY - heightPx * 0.22, x + widthPx * 0.22, baseY);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function paintVillage(ctx, time) {
+      const by = SKY;
+      const hills = [
+        [by + 6, "#0c1e14", 18, 0.004, 0],
+        [by + 18, "#0a1810", 12, 0.006, 2],
+        [by + 32, "#081408", 8, 0.008, 4],
+      ];
+      for (const [y, c, a, f, o] of hills) {
+        ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(0, H);
+        for (let x = 0; x <= W; x += 2) ctx.lineTo(x, y + Math.sin(x * f + o) * a + Math.sin(x * 0.011 + o * 2) * 6);
+        ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+      }
+
+      ctx.fillStyle = "#050908"; ctx.fillRect(0, by + 42, W, 140);
+
+      const drawHouse = (hx, hy, w, h, roofH, windows) => {
+        ctx.fillStyle = "#030605";
+        ctx.fillRect(hx, hy - h, w, h);
+        ctx.beginPath();
+        ctx.moveTo(hx - 3, hy - h);
+        ctx.lineTo(hx + w / 2, hy - h - roofH);
+        ctx.lineTo(hx + w + 3, hy - h);
+        ctx.fill();
+        ctx.fillStyle = PAL.windowGlow;
+        windows.forEach(win => {
+          ctx.globalAlpha = 0.6 + Math.sin(time * 0.002 + win.x * 10) * 0.4;
+          ctx.fillRect(hx + win.x, hy - win.y, win.w, win.h);
+        });
+        ctx.globalAlpha = 1.0;
+      };
+
+      ctx.fillStyle = "#030605";
+      ctx.fillRect(400, by + 10, 25, 60);
+      ctx.beginPath(); ctx.moveTo(395, by + 10); ctx.lineTo(412.5, by - 50); ctx.lineTo(430, by + 10); ctx.fill();
+      ctx.fillStyle = PAL.windowGlow; ctx.globalAlpha = 0.8; ctx.fillRect(410, by + 30, 5, 12); ctx.globalAlpha = 1.0;
+
+      drawHouse(180, by + 65, 30, 20, 15, [{x: 8, y: 10, w: 6, h: 6}]);
+      drawHouse(250, by + 60, 35, 25, 15, [{x: 12, y: 12, w: 10, h: 8}]);
+      drawHouse(320, by + 60, 40, 30, 20, [{x: 8, y: 15, w: 6, h: 8}, {x: 24, y: 15, w: 6, h: 8}]);
+      drawHouse(370, by + 62, 28, 22, 12, [{x: 10, y: 12, w: 8, h: 6}]);
+      drawHouse(460, by + 65, 40, 28, 20, [{x: 10, y: 15, w: 6, h: 8}, {x: 24, y: 15, w: 6, h: 8}]);
+      drawHouse(550, by + 60, 45, 25, 15, [{x: 10, y: 15, w: 6, h: 6}, {x: 25, y: 15, w: 6, h: 6}]);
+      drawHouse(680, by + 62, 35, 25, 18, [{x: 12, y: 12, w: 10, h: 8}]);
+      drawHouse(210, by + 85, 50, 35, 22, [{x: 10, y: 18, w: 8, h: 10}, {x: 30, y: 18, w: 8, h: 10}]);
+      drawHouse(280, by + 80, 45, 30, 20, [{x: 15, y: 15, w: 15, h: 10}]);
+      drawHouse(440, by + 85, 55, 40, 25, [{x: 12, y: 22, w: 10, h: 12}, {x: 32, y: 22, w: 10, h: 12}]);
+      drawHouse(510, by + 78, 40, 28, 18, [{x: 15, y: 15, w: 10, h: 8}]);
+      drawHouse(600, by + 88, 50, 35, 25, [{x: 10, y: 20, w: 8, h: 10}, {x: 30, y: 20, w: 8, h: 10}]);
+      drawHouse(660, by + 82, 45, 30, 20, [{x: 15, y: 15, w: 15, h: 10}]);
+      drawHouse(730, by + 75, 40, 25, 15, [{x: 12, y: 12, w: 16, h: 8}]);
+
+      paintCypress(ctx, 85, by + 52, H * 0.62, 52, time);
+      paintCypress(ctx, 55, by + 56, H * 0.38, 32, time);
+    }
+
+    /* ── Componente Principal ── */
+    function StarryElectricField() {
+      const canvasRef = useRef(null);
+      const [hasStarted, setHasStarted] = useState(false);
+      const [charges, setCharges] = useState(initCharges);
+      const [dragging, setDragging] = useState(null);
+      const [offset, setOffset] = useState({ x: 0, y: 0 });
+      const flRef = useRef([]);
+      const ambRef = useRef([]);
+      const timeRef = useRef(0);
+      const animRef = useRef(null);
+      const cRef = useRef(charges);
+
+      useEffect(() => { cRef.current = charges; }, [charges]);
+
+      const rebuild = useCallback(() => {
+        flRef.current = traceFieldLines(cRef.current);
+        ambRef.current = genAmbient(cRef.current);
+      }, []);
+      
+      useEffect(() => { rebuild(); const iv = setInterval(rebuild, 170); return () => clearInterval(iv); }, [charges, rebuild]);
+
+      useEffect(() => {
+        if (!hasStarted) return; 
+
+        const cvs = canvasRef.current; if (!cvs) return;
+        const ctx = cvs.getContext("2d");
+        const palette = [PAL.s3, PAL.s4, PAL.s5, PAL.s6, PAL.s4, PAL.s5]; 
+
+        const frame = () => {
+          timeRef.current += 16;
+          const t = timeRef.current;
+
+          const bg = ctx.createLinearGradient(0, 0, 0, SKY);
+          bg.addColorStop(0, PAL.skyDeep); bg.addColorStop(0.35, PAL.skyMid);
+          bg.addColorStop(0.75, PAL.skyLight); bg.addColorStop(1, "#1a3050");
+          ctx.fillStyle = bg; ctx.fillRect(0, 0, W, SKY + 30);
+          ctx.fillStyle = "#050908"; ctx.fillRect(0, SKY, W, H - SKY);
+
+          paintStars(ctx, t);
+          paintMoon(ctx, t);
+
+          /* Ambient swirls */
+          for (const pts of ambRef.current) {
+            const ph = pts[0].x * 0.03 + pts[0].y * 0.02;
+            paintAmbient(ctx, pts, PAL.s2, 1.2, t, ph);
+          }
+
+          /* ── LINHAS DE CAMPO COMO SETAS ── */
+          for (let li = 0; li < flRef.current.length; li++) {
+            const { pts } = flRef.current[li];
+            if (pts.length < 5) continue;
+
+            const mid = Math.floor(pts.length * 0.3);
+            const { fx, fy } = eField(pts[mid].x, pts[mid].y, cRef.current);
+            const mag = Math.sqrt(fx * fx + fy * fy);
+            const ci = Math.min(palette.length - 1, Math.floor(mag * 12));
+            const color = palette[ci];
+
+            /* Calcular cor com shimmer/twinkle */
+            const phase = li * 1.7 + pts[0].x * 0.012;
+            const shimmer = Math.sin(t * 0.005 + phase) * 0.28 + 0.72;
+            const twinkle = Math.pow(Math.sin(t * 0.015 + phase * 2.5), 4);
+
+            const r = parseInt(color.slice(1, 3), 16), g = parseInt(color.slice(3, 5), 16), b = parseInt(color.slice(5, 7), 16);
+            const fl = Math.sin(t * 0.007 + phase * 1.4) * 22 * shimmer;
+            const cr = Math.min(255, Math.max(0, r + fl + twinkle * 70)) | 0;
+            const cg = Math.min(255, Math.max(0, g + fl * 0.6 + twinkle * 70)) | 0;
+            const cb = Math.min(255, Math.max(0, b + fl * 0.2 + twinkle * 50)) | 0;
+            const arrowColor = `rgb(${cr},${cg},${cb})`;
+            const alphaBase = Math.min(1, (0.4 * shimmer + 0.2) + (twinkle * 0.4));
+
+            /* Desenhar setas ao longo da linha */
+            const arrowSpacing = 18 + (1 - Math.min(mag * 3, 1)) * 12;
+            const arrowSize = 4.5 + Math.min(mag * 4, 3.5);
+            let accumDist = arrowSpacing * 0.5; // start offset
+
+            for (let pi = 1; pi < pts.length; pi++) {
+              const dx = pts[pi].x - pts[pi - 1].x;
+              const dy = pts[pi].y - pts[pi - 1].y;
+              const segLen = Math.sqrt(dx * dx + dy * dy);
+              if (segLen < 0.5) continue;
+
+              accumDist += segLen;
+              if (accumDist >= arrowSpacing) {
+                accumDist -= arrowSpacing;
+                
+                /* Direção: campo sai de + e entra em − */
+                /* pts já estão na direção do campo (saindo de +), então a seta aponta na direção de pts[pi]-pts[pi-1] */
+                const angle = Math.atan2(dy, dx);
+                
+                /* Shimmer individual por seta */
+                const arrowPhase = phase + pi * 0.3;
+                const arrowShimmer = Math.sin(t * 0.006 + arrowPhase) * 0.25 + 0.75;
+                const arrowTwinkle = Math.pow(Math.sin(t * 0.018 + arrowPhase * 1.8), 6);
+                const arrowAlpha = Math.min(1, alphaBase * arrowShimmer + arrowTwinkle * 0.35);
+
+                drawArrow(ctx, pts[pi].x, pts[pi].y, angle, arrowSize, arrowColor, arrowAlpha);
+              }
+            }
+          }
+
+          for (const c of cRef.current) paintChargeGlow(ctx, c, t);
+          paintVillage(ctx, t);
+
+          /* --- VETOR DE FORÇA RESULTANTE --- */
+          for (let i = 0; i < cRef.current.length; i++) {
+            const c = cRef.current[i];
+            const force = getForceOnCharge(i, cRef.current);
+            const forceMag = Math.sqrt(force.fx * force.fx + force.fy * force.fy);
+
+            if (forceMag > 0.1) {
+              const drawScale = 1.2; 
+              const maxLen = 120;    
+              let drawFx = force.fx * drawScale;
+              let drawFy = force.fy * drawScale;
+              const currentLen = Math.sqrt(drawFx * drawFx + drawFy * drawFy);
+
+              if (currentLen > maxLen) {
+                drawFx = (drawFx / currentLen) * maxLen;
+                drawFy = (drawFy / currentLen) * maxLen;
+              }
+
+              const r = c.radius + 15; 
+
+              if (currentLen > 5) {
+                const dirX = drawFx / currentLen;
+                const dirY = drawFy / currentLen;
+                
+                const startX = c.x + dirX * r;
+                const startY = c.y + dirY * r;
+                const endX = startX + drawFx;
+                const endY = startY + drawFy;
+
+                const arrowHeadSize = 12;
+                ctx.strokeStyle = PAL.forceResultant;
+                ctx.fillStyle = PAL.forceResultant;
+                ctx.lineWidth = 3.5;
+                
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+
+                const angle = Math.atan2(drawFy, drawFx);
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(
+                  endX - arrowHeadSize * Math.cos(angle - Math.PI / 6),
+                  endY - arrowHeadSize * Math.sin(angle - Math.PI / 6)
+                );
+                ctx.lineTo(
+                  endX - arrowHeadSize * Math.cos(angle + Math.PI / 6),
+                  endY - arrowHeadSize * Math.sin(angle + Math.PI / 6)
+                );
+                ctx.closePath();
+                ctx.fill();
+              }
+            }
+          }
+
+          animRef.current = requestAnimationFrame(frame);
+        };
+        animRef.current = requestAnimationFrame(frame);
+        return () => cancelAnimationFrame(animRef.current);
+      }, [hasStarted]);
+
+      const getPos = (e) => {
+        const rect = canvasRef.current.getBoundingClientRect();
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (cx - rect.left) * W / rect.width, y: (cy - rect.top) * H / rect.height };
+      };
+
+      const onDown = (e) => {
+        e.preventDefault(); const p = getPos(e);
+        for (let i = charges.length - 1; i >= 0; i--) {
+          if (Math.hypot(p.x - charges[i].x, p.y - charges[i].y) < charges[i].radius + 22) {
+            setDragging(i); setOffset({ x: charges[i].x - p.x, y: charges[i].y - p.y }); return;
+          }
+        }
+      };
+
+      const onMove = (e) => {
+        if (dragging === null) return; e.preventDefault();
+        const p = getPos(e);
+        setCharges(prev => {
+          const n = [...prev];
+          n[dragging] = { ...n[dragging],
+            x: Math.max(20, Math.min(W - 20, p.x + offset.x)),
+            y: Math.max(20, Math.min(SKY - 30, p.y + offset.y)),
+          };
+          return n;
+        });
+      };
+
+      const onUp = () => setDragging(null);
+
+      const toggle = (i) => setCharges(prev => {
+        const n = [...prev]; const c = n[i]; const p = !c.positive;
+        n[i] = { ...c, positive: p, charge: p ? Math.abs(c.charge) : -Math.abs(c.charge), color: p ? PAL.positive : PAL.negative };
+        return n;
+      });
+
+      const onQ = (i, v) => setCharges(prev => {
+        const n = [...prev]; const m = +v;
+        n[i] = { ...n[i], charge: n[i].positive ? m : -m, radius: 12 + m / 45 };
+        return n;
+      });
+
+      const removeCharge = (indexToRemove) => {
+        setCharges(prev => prev.filter((_, i) => i !== indexToRemove));
+      };
+
+      const addCharge = () => {
+        setCharges(prev => {
+          if (prev.length >= 3) return prev;
+          const usedNames = prev.map(c => c.name);
+          const greekLetters = ["α", "β", "γ"];
+          let newName = "Nova Carga";
+          for (const letter of greekLetters) {
+            const candidate = `Carga ${letter}`;
+            if (!usedNames.includes(candidate)) { newName = candidate; break; }
+          }
+          return [...prev, {
+            x: W / 2 + (Math.random() * 80 - 40),
+            y: SKY / 2 + (Math.random() * 80 - 40),
+            charge: 500, positive: true, name: newName,
+            color: PAL.positive, radius: 12 + 500 / 45,
+          }];
+        });
+      };
+
+      /* ── WOOD THEME ── */
+      const WOOD = {
+        dark: "#2a1a0e", mid: "#3d2818", light: "#5a3a20", grain: "#4a2e16",
+        highlight: "#6b4a2a", edge: "#1e120a", brass: "#c8a84e", brassLight: "#e0c870",
+        brassDark: "#8a6e2a", text: "#e8d8c0", textDim: "#a08a6a", groove: "#1a0e06",
+        surface: "#3a2414",
+      };
+
+      /* CSS wood-grain via repeating gradients */
+      const woodBg = `
+        linear-gradient(180deg, ${WOOD.dark}00 0%, ${WOOD.grain}18 8%, ${WOOD.dark}00 12%, ${WOOD.grain}12 22%, ${WOOD.dark}00 28%, ${WOOD.grain}15 38%, ${WOOD.dark}00 45%, ${WOOD.grain}10 55%, ${WOOD.dark}00 62%, ${WOOD.grain}18 72%, ${WOOD.dark}00 78%, ${WOOD.grain}12 88%, ${WOOD.dark}00 95%),
+        linear-gradient(92deg, ${WOOD.highlight}08 0%, ${WOOD.mid}00 30%, ${WOOD.highlight}06 60%, ${WOOD.mid}00 100%),
+        linear-gradient(135deg, ${WOOD.mid}, ${WOOD.dark} 40%, ${WOOD.surface} 70%, ${WOOD.dark})
+      `;
+
+      const panelStyle = {
+        background: woodBg,
+        border: `2px solid ${WOOD.edge}`,
+        borderTop: `2px solid ${WOOD.highlight}55`,
+        borderRadius: "6px",
+        padding: "12px 14px",
+        minWidth: 220, flex: "1 1 220px", maxWidth: 280,
+        boxShadow: `inset 0 1px 0 ${WOOD.highlight}22, inset 0 -1px 0 ${WOOD.groove}, 0 4px 16px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4)`,
+        transition: "transform 0.2s, box-shadow 0.2s",
+        position: "relative",
+      };
+
+      const brassLabelStyle = {
+        fontSize: "8px", letterSpacing: "1.5px", textTransform: "uppercase",
+        color: WOOD.brass, fontFamily: "'Georgia', serif", fontWeight: 700,
+        textShadow: `0 1px 2px ${WOOD.groove}`,
+      };
+
+      const polarityBtnStyle = (isPositive) => ({
+        display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+        background: `linear-gradient(180deg, ${isPositive ? "#5a4420" : "#2a3a55"}, ${isPositive ? "#3a2a10" : "#1a2a40"})`,
+        border: `1.5px solid ${WOOD.brass}66`,
+        borderBottom: `2px solid ${WOOD.groove}`,
+        borderTop: `1px solid ${isPositive ? "#7a5a30" : "#3a5a80"}55`,
+        color: isPositive ? PAL.positive : "#8ac0ff",
+        borderRadius: "4px", padding: "4px 12px", fontSize: "10px", cursor: "pointer",
+        letterSpacing: "0.5px", fontWeight: 700, transition: "all 0.2s",
+        fontFamily: "'Georgia', serif",
+        boxShadow: `0 2px 4px ${WOOD.groove}88, inset 0 1px 0 ${isPositive ? "#8a6a30" : "#4a6a90"}33`,
+        textShadow: `0 1px 2px rgba(0,0,0,0.5)`,
+      });
+
+      const sliderTrackStyle = (color) => ({
+        flex: 1, height: "5px", appearance: "none", WebkitAppearance: "none",
+        background: `linear-gradient(180deg, ${WOOD.groove}, ${WOOD.edge})`,
+        borderRadius: "2px", outline: "none", cursor: "pointer",
+        accentColor: color,
+        border: `1px solid ${WOOD.groove}`,
+        boxShadow: `inset 0 1px 2px ${WOOD.groove}`,
+      });
+
+      const woodBtnStyle = (accent, accentDark) => ({
+        background: `linear-gradient(180deg, ${WOOD.light}, ${WOOD.mid} 50%, ${WOOD.dark})`,
+        border: `1.5px solid ${WOOD.edge}`,
+        borderTop: `1.5px solid ${WOOD.highlight}55`,
+        color: accent,
+        padding: "8px 14px",
+        borderRadius: "4px", cursor: "pointer", fontSize: "11px", letterSpacing: "1px",
+        fontFamily: "'Georgia', serif", fontWeight: 700, transition: "all 0.2s", width: "100%",
+        boxShadow: `0 3px 6px ${WOOD.groove}aa, inset 0 1px 0 ${WOOD.highlight}33`,
+        textShadow: `0 1px 2px rgba(0,0,0,0.6)`,
+        textTransform: "uppercase",
+      });
+
+      const brassScrew = (top, left) => (
+        <div style={{
+          position: "absolute", top, left, width: 8, height: 8, borderRadius: "50%",
+          background: `radial-gradient(circle at 35% 35%, ${WOOD.brassLight}, ${WOOD.brass} 50%, ${WOOD.brassDark})`,
+          boxShadow: `0 1px 2px ${WOOD.groove}, inset 0 -1px 1px ${WOOD.brassDark}88`,
+        }}>
+          <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(35deg)",
+            width: 5, height: 1, background: WOOD.brassDark, borderRadius: 1 }} />
+        </div>
+      );
+
+      return (
+        <div style={{ background: "#050d1a", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", fontFamily: "'Georgia',serif", color: "#c8d8f0", padding: "12px 8px", boxSizing: "border-box", position: "relative" }}>
+          
+          {!hasStarted && (
+            <div style={{
+              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+              background: "rgba(5, 13, 26, 0.85)", backdropFilter: "blur(8px)",
+              zIndex: 50, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              textAlign: "center", padding: "20px"
+            }}>
+              <h1 style={{ fontSize: "clamp(24px, 5vw, 42px)", color: PAL.yellow, textShadow: `0 0 30px ${PAL.yellow}88`, fontStyle: "italic", marginBottom: "15px" }}>
+                Campo Elétrico <br/> A Noite Estrelada
+              </h1>
+              <p style={{ fontSize: "16px", maxWidth: "500px", lineHeight: "1.6", marginBottom: "20px", color: "#e0eaf5" }}>
+                Explore o conceito de linhas de força e interações eletrostáticas em um ambiente interativo inspirado na obra de Vincent van Gogh. <br/><br/>
+                <em>* Clique e arraste as cargas na tela.<br/>* Observe os vetores indicando as forças de atração e repulsão.<br/>* As setas do campo saem de cargas positivas (+) e entram em negativas (−).</em>
+              </p>
+              <button 
+                onClick={() => setHasStarted(true)}
+                style={{
+                  background: PAL.s3, color: "#fff", border: "none", padding: "12px 35px", fontSize: "18px",
+                  borderRadius: "30px", cursor: "pointer", letterSpacing: "1px", boxShadow: `0 0 20px ${PAL.s3}66`,
+                  transition: "transform 0.2s, background 0.2s"
+                }}
+              >
+                ENTRAR NO SIMULADOR
+              </button>
+            </div>
+          )}
+
+          <h1 style={{ fontSize: "clamp(17px,3.5vw,28px)", fontWeight: 400, letterSpacing: "2px", color: PAL.yellow, textShadow: `0 0 25px ${PAL.yellow}55,0 0 50px ${PAL.orange}33`, margin: "6px 0 2px", textAlign: "center", fontStyle: "italic" }}>
+            ✦ Campo Elétrico — Noite Estrelada ✦
+          </h1>
+          <p style={{ fontSize: "clamp(10px,1.8vw,13px)", opacity: 0.5, margin: "0 0 10px", letterSpacing: "1.5px", textAlign: "center", maxWidth: 640 }}>
+            Setas coloridas = linhas de campo E⃗ · Setas vermelhas = Força Resultante (F⃗)
+          </p>
+
+          {/* ── LAYOUT: Painel à esquerda + Canvas à direita ── */}
+          <div style={{ display: "flex", gap: "14px", alignItems: "flex-start", justifyContent: "center", maxWidth: 1100, width: "100%", flexWrap: "wrap" }}>
+
+            {/* ── PAINEL DE CONTROLE — WOOD FRAME (ESQUERDA) ── */}
+            <div style={{
+              width: 252, minWidth: 230, flexShrink: 0, display: "flex", flexDirection: "column", gap: "0px",
+              background: woodBg,
+              border: `3px solid ${WOOD.edge}`,
+              borderTop: `3px solid ${WOOD.highlight}44`,
+              borderRadius: "8px",
+              padding: "16px 14px 14px",
+              boxShadow: `0 6px 24px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.4), inset 0 1px 0 ${WOOD.highlight}22, inset 0 -2px 0 ${WOOD.groove}`,
+              position: "relative",
+            }}>
+
+              {/* Parafusos decorativos nos cantos */}
+              {brassScrew("6px", "6px")}
+              {brassScrew("6px", "auto")}
+              <div style={{ position: "absolute", top: 6, right: 6, width: 8, height: 8, borderRadius: "50%",
+                background: `radial-gradient(circle at 35% 35%, ${WOOD.brassLight}, ${WOOD.brass} 50%, ${WOOD.brassDark})`,
+                boxShadow: `0 1px 2px ${WOOD.groove}, inset 0 -1px 1px ${WOOD.brassDark}88`,
+              }}>
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(35deg)",
+                  width: 5, height: 1, background: WOOD.brassDark, borderRadius: 1 }} />
+              </div>
+
+              {/* Plaquinha de latão com título */}
+              <div style={{
+                background: `linear-gradient(180deg, ${WOOD.brassLight}, ${WOOD.brass} 40%, ${WOOD.brassDark})`,
+                borderRadius: "3px", padding: "4px 12px", marginBottom: "12px", textAlign: "center",
+                boxShadow: `0 2px 4px ${WOOD.groove}88, inset 0 1px 0 ${WOOD.brassLight}88`,
+                border: `1px solid ${WOOD.brassDark}`,
+                alignSelf: "center",
+              }}>
+                <span style={{ fontSize: "10px", letterSpacing: "2.5px", textTransform: "uppercase", color: WOOD.dark, fontFamily: "'Georgia', serif", fontWeight: 700 }}>
+                  Painel de Controle
+                </span>
+              </div>
+
+              {/* Sulco decorativo */}
+              <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${WOOD.groove}, ${WOOD.highlight}22, ${WOOD.groove}, transparent)`, marginBottom: "10px" }} />
+
+              {/* Cards das cargas */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {charges.map((c, i) => (
+                  <div key={i} style={{
+                    background: `linear-gradient(180deg, ${WOOD.surface}cc, ${WOOD.dark}dd)`,
+                    border: `1.5px solid ${WOOD.edge}`,
+                    borderTop: `1.5px solid ${WOOD.highlight}33`,
+                    borderRadius: "5px",
+                    padding: "10px 12px",
+                    boxShadow: `inset 0 1px 0 ${WOOD.highlight}15, inset 0 -1px 0 ${WOOD.groove}, 0 2px 6px ${WOOD.groove}66`,
+                  }}>
+                    {/* Header: nome + remover */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "9px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{
+                          width: 24, height: 24, borderRadius: "50%",
+                          background: c.positive
+                            ? `radial-gradient(circle at 40% 40%, #fffef0, ${c.color})`
+                            : `radial-gradient(circle at 40% 40%, #6ab0ff, ${c.color})`,
+                          boxShadow: `0 0 8px ${c.color}66, 0 1px 3px ${WOOD.groove}`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "14px", fontWeight: "bold",
+                          color: c.positive ? "#332800" : "#fff",
+                          border: `1.5px solid ${WOOD.brass}55`,
+                        }}>
+                          {c.positive ? "+" : "−"}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: "12px", fontStyle: "italic", color: WOOD.brassLight, letterSpacing: "0.5px", fontWeight: 700, textShadow: `0 1px 2px ${WOOD.groove}` }}>{c.name}</div>
+                          <div style={{ fontSize: "8px", color: WOOD.textDim, marginTop: "1px", letterSpacing: "0.5px" }}>{c.positive ? "Carga Positiva" : "Carga Negativa"}</div>
+                        </div>
+                      </div>
+                      <button title="Remover carga" onClick={() => removeCharge(i)} style={{
+                        background: `linear-gradient(180deg, #5a2020, #3a1010)`,
+                        border: `1.5px solid ${WOOD.edge}`, borderTop: `1px solid #6a303055`,
+                        color: "#ff8888", cursor: "pointer", fontSize: "12px", fontWeight: "bold",
+                        width: 22, height: 22, borderRadius: "3px", display: "flex", alignItems: "center",
+                        justifyContent: "center", padding: 0, transition: "all 0.2s",
+                        boxShadow: `0 2px 4px ${WOOD.groove}88`,
+                      }}>×</button>
+                    </div>
+
+                    {/* Polaridade */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "9px" }}>
+                      <span style={{ ...brassLabelStyle, minWidth: 46 }}>Sinal</span>
+                      <button onClick={() => toggle(i)} style={polarityBtnStyle(c.positive)}>
+                        <span style={{ fontSize: "12px", fontWeight: "bold" }}>{c.positive ? "+" : "−"}</span>
+                        <span>{c.positive ? "Positiva" : "Negativa"}</span>
+                        <span style={{ opacity: 0.5, fontSize: "8px" }}>⇄</span>
+                      </button>
+                    </div>
+
+                    {/* Magnitude */}
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ ...brassLabelStyle, minWidth: 46 }}>|Q|</span>
+                      <input type="range" min={100} max={1200} value={Math.abs(c.charge)}
+                        onChange={e => onQ(i, e.target.value)}
+                        style={sliderTrackStyle(c.color)} />
+                      <span style={{
+                        fontSize: "11px", fontWeight: 700, color: WOOD.brassLight,
+                        minWidth: 34, textAlign: "right", fontFamily: "monospace",
+                        textShadow: `0 0 6px ${c.color}44, 0 1px 2px ${WOOD.groove}`,
+                      }}>{Math.abs(c.charge)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Sulco decorativo */}
+              <div style={{ height: 1, background: `linear-gradient(90deg, transparent, ${WOOD.groove}, ${WOOD.highlight}22, ${WOOD.groove}, transparent)`, margin: "12px 0 10px" }} />
+
+              {/* Botões de ação */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                {charges.length < 3 && (
+                  <button onClick={addCharge} style={woodBtnStyle(WOOD.brassLight, WOOD.brassDark)}>
+                    ＋ Adicionar Carga
+                  </button>
+                )}
+                <button onClick={() => setCharges(initCharges())} style={woodBtnStyle("#a0c8ff", "#4a6a90")}>
+                  ↺ Reiniciar
+                </button>
+              </div>
+
+              {/* Legenda em plaquinha */}
+              <div style={{
+                marginTop: "12px", padding: "8px 10px",
+                background: `linear-gradient(180deg, ${WOOD.dark}ee, ${WOOD.groove}ee)`,
+                border: `1px solid ${WOOD.edge}`,
+                borderRadius: "3px",
+                boxShadow: `inset 0 1px 3px ${WOOD.groove}`,
+              }}>
+                <div style={{ fontSize: "9px", color: WOOD.textDim, lineHeight: 1.7, letterSpacing: "0.3px" }}>
+                  <div>⚡ Setas saem de <span style={{ color: PAL.positive, fontWeight: 700 }}>+</span> e entram em <span style={{ color: "#8ac0ff", fontWeight: 700 }}>−</span></div>
+                  <div style={{ color: "#ff8888" }}>⚡ Seta vermelha = Força resultante F⃗</div>
+                  <div style={{ marginTop: 3, opacity: 0.6 }}>Arraste as cargas no canvas →</div>
+                </div>
+              </div>
+
+              {/* Parafusos inferiores */}
+              <div style={{ position: "absolute", bottom: 6, left: 6, width: 8, height: 8, borderRadius: "50%",
+                background: `radial-gradient(circle at 35% 35%, ${WOOD.brassLight}, ${WOOD.brass} 50%, ${WOOD.brassDark})`,
+                boxShadow: `0 1px 2px ${WOOD.groove}, inset 0 -1px 1px ${WOOD.brassDark}88`,
+              }}>
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(-20deg)",
+                  width: 5, height: 1, background: WOOD.brassDark, borderRadius: 1 }} />
+              </div>
+              <div style={{ position: "absolute", bottom: 6, right: 6, width: 8, height: 8, borderRadius: "50%",
+                background: `radial-gradient(circle at 35% 35%, ${WOOD.brassLight}, ${WOOD.brass} 50%, ${WOOD.brassDark})`,
+                boxShadow: `0 1px 2px ${WOOD.groove}, inset 0 -1px 1px ${WOOD.brassDark}88`,
+              }}>
+                <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(60deg)",
+                  width: 5, height: 1, background: WOOD.brassDark, borderRadius: 1 }} />
+              </div>
+            </div>
+
+            {/* ── CANVAS com moldura de madeira (DIREITA) ── */}
+            <div style={{
+              borderRadius: "6px", overflow: "hidden",
+              border: `4px solid ${WOOD.edge}`,
+              borderTop: `4px solid ${WOOD.highlight}44`,
+              boxShadow: `0 6px 24px rgba(0,0,0,0.55), 0 2px 6px rgba(0,0,0,0.4), inset 0 0 0 1px ${WOOD.groove}`,
+              flex: "1 1 0", minWidth: 0, maxWidth: 800,
+              background: woodBg,
+              padding: "4px",
+            }}>
+              <canvas ref={canvasRef} width={W} height={H}
+                style={{ display: "block", width: "100%", height: "auto", cursor: dragging !== null ? "grabbing" : "grab", touchAction: "none", borderRadius: "3px" }}
+                onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+                onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp} />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<StarryElectricField />);
+  </script>
+
+</body>
+</html>

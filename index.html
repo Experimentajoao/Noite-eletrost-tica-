@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Noite Estrelada — Painel de Acesso</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sky-deep: #070d1f;
+    --sky-mid: #0f1d3a;
+    --sky-blue: #1a3a6a;
+    --swirl-blue: #2a5ea0;
+    --swirl-light: #4a90cc;
+    --star-yellow: #f5c842;
+    --star-orange: #e8a830;
+    --moon-glow: #f0e8a0;
+    --cypress-dark: #0a1a10;
+    --village-warm: #1a2840;
+    --text-primary: #f0e6d0;
+    --text-muted: #8a9ab5;
+    --accent-gold: #f5c842;
+    --panel-bg: rgba(10, 18, 38, 0.92);
+    --sidebar-w: 300px;
+  }
+
+- { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+font-family: ‘Cormorant Garamond’, Georgia, serif;
+background: var(–sky-deep);
+color: var(–text-primary);
+height: 100vh;
+overflow: hidden;
+display: flex;
+}
+
+/* ═══════ ANIMATED STARRY BACKGROUND ═══════ */
+#starfield {
+position: fixed;
+inset: 0;
+z-index: 0;
+pointer-events: none;
+}
+
+/* ═══════ SIDEBAR ═══════ */
+.sidebar {
+position: relative;
+z-index: 10;
+width: var(–sidebar-w);
+min-width: var(–sidebar-w);
+height: 100vh;
+background: linear-gradient(195deg, rgba(15, 29, 58, 0.97) 0%, rgba(7, 13, 31, 0.98) 100%);
+border-right: 1px solid rgba(42, 94, 160, 0.2);
+display: flex;
+flex-direction: column;
+backdrop-filter: blur(20px);
+box-shadow: 4px 0 40px rgba(0, 0, 0, 0.5);
+overflow: hidden;
+}
+
+.sidebar::before {
+content: ‘’;
+position: absolute;
+inset: 0;
+background:
+radial-gradient(ellipse 120px 120px at 70% 15%, rgba(245, 200, 66, 0.06) 0%, transparent 70%),
+radial-gradient(ellipse 80px 80px at 30% 85%, rgba(42, 94, 160, 0.08) 0%, transparent 70%);
+pointer-events: none;
+}
+
+/* Swirl decoration */
+.sidebar::after {
+content: ‘’;
+position: absolute;
+top: -60px;
+right: -60px;
+width: 200px;
+height: 200px;
+border-radius: 50%;
+border: 2px solid rgba(74, 144, 204, 0.07);
+pointer-events: none;
+animation: swirlSlow 25s linear infinite;
+}
+
+@keyframes swirlSlow {
+from { transform: rotate(0deg); }
+to { transform: rotate(360deg); }
+}
+
+/* ── Logo / Header ── */
+.sidebar-header {
+padding: 32px 28px 20px;
+text-align: center;
+position: relative;
+}
+
+.logo-moon {
+width: 72px;
+height: 72px;
+margin: 0 auto 14px;
+border-radius: 50%;
+background: radial-gradient(circle at 35% 40%, var(–moon-glow) 0%, var(–star-yellow) 40%, var(–star-orange) 80%);
+box-shadow:
+0 0 30px rgba(245, 200, 66, 0.4),
+0 0 60px rgba(245, 200, 66, 0.15),
+0 0 100px rgba(245, 200, 66, 0.08);
+animation: moonPulse 4s ease-in-out infinite;
+position: relative;
+}
+
+.logo-moon::after {
+content: ‘’;
+position: absolute;
+top: 8px;
+left: 6px;
+width: 55px;
+height: 55px;
+border-radius: 50%;
+background: radial-gradient(circle at 60% 50%, transparent 40%, rgba(232, 168, 48, 0.3) 100%);
+}
+
+@keyframes moonPulse {
+0%, 100% { box-shadow: 0 0 30px rgba(245,200,66,0.4), 0 0 60px rgba(245,200,66,0.15); }
+50% { box-shadow: 0 0 40px rgba(245,200,66,0.55), 0 0 80px rgba(245,200,66,0.25); }
+}
+
+.sidebar-title {
+font-family: ‘Playfair Display’, Georgia, serif;
+font-size: 22px;
+font-weight: 700;
+font-style: italic;
+color: var(–accent-gold);
+text-shadow: 0 0 20px rgba(245, 200, 66, 0.3);
+letter-spacing: 1px;
+line-height: 1.2;
+}
+
+.sidebar-subtitle {
+font-size: 11px;
+color: var(–text-muted);
+letter-spacing: 3px;
+text-transform: uppercase;
+margin-top: 6px;
+font-family: ‘Cormorant Garamond’, serif;
+}
+
+.divider {
+height: 1px;
+margin: 0 28px;
+background: linear-gradient(90deg, transparent, rgba(74, 144, 204, 0.2), rgba(245, 200, 66, 0.15), rgba(74, 144, 204, 0.2), transparent);
+}
+
+/* ── Navigation ── */
+.nav-section {
+padding: 24px 20px;
+flex: 1;
+display: flex;
+flex-direction: column;
+gap: 10px;
+}
+
+.nav-label {
+font-size: 9px;
+letter-spacing: 3px;
+text-transform: uppercase;
+color: var(–text-muted);
+opacity: 0.6;
+padding: 0 8px;
+margin-bottom: 4px;
+font-family: ‘Cormorant Garamond’, serif;
+}
+
+.nav-btn {
+position: relative;
+display: flex;
+align-items: center;
+gap: 16px;
+padding: 16px 18px;
+border-radius: 14px;
+border: 1.5px solid transparent;
+background: transparent;
+cursor: pointer;
+transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+text-align: left;
+font-family: ‘Cormorant Garamond’, serif;
+overflow: hidden;
+}
+
+.nav-btn::before {
+content: ‘’;
+position: absolute;
+inset: 0;
+border-radius: 14px;
+opacity: 0;
+background: linear-gradient(135deg, rgba(26, 58, 107, 0.5), rgba(20, 40, 80, 0.6));
+transition: opacity 0.35s;
+}
+
+.nav-btn:hover::before {
+opacity: 1;
+}
+
+.nav-btn:hover {
+border-color: rgba(74, 144, 204, 0.25);
+transform: translateX(4px);
+}
+
+.nav-btn.active {
+border-color: rgba(245, 200, 66, 0.4);
+background: linear-gradient(135deg, rgba(245, 200, 66, 0.08), rgba(245, 200, 66, 0.02));
+}
+
+.nav-btn.active::before { opacity: 0; }
+
+.nav-btn.active .nav-icon {
+background: radial-gradient(circle, var(–star-yellow), var(–star-orange));
+box-shadow: 0 0 20px rgba(245, 200, 66, 0.35);
+border-color: var(–star-yellow);
+color: #3a2000;
+}
+
+.nav-icon {
+position: relative;
+z-index: 1;
+width: 46px;
+height: 46px;
+border-radius: 50%;
+background: radial-gradient(circle, rgba(30, 80, 144, 0.6), rgba(20, 40, 80, 0.8));
+border: 1.5px solid rgba(74, 144, 204, 0.3);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 20px;
+flex-shrink: 0;
+transition: all 0.35s;
+box-shadow: 0 0 12px rgba(30, 80, 144, 0.2);
+}
+
+.nav-text {
+position: relative;
+z-index: 1;
+}
+
+.nav-text-title {
+font-family: ‘Playfair Display’, serif;
+font-size: 15px;
+font-weight: 600;
+font-style: italic;
+color: var(–text-primary);
+transition: color 0.3s;
+}
+
+.nav-btn.active .nav-text-title {
+color: var(–accent-gold);
+}
+
+.nav-text-desc {
+font-size: 11px;
+color: var(–text-muted);
+margin-top: 2px;
+opacity: 0.7;
+}
+
+/* ── Info card ── */
+.info-card {
+margin: 0 20px 20px;
+padding: 18px 20px;
+background: rgba(20, 40, 80, 0.35);
+border-radius: 14px;
+border: 1px solid rgba(74, 144, 204, 0.1);
+backdrop-filter: blur(6px);
+}
+
+.info-card p {
+font-size: 12px;
+color: var(–text-muted);
+line-height: 1.7;
+font-style: italic;
+}
+
+.info-card .highlight {
+color: var(–accent-gold);
+}
+
+/* ── Footer ── */
+.sidebar-footer {
+padding: 16px 28px;
+border-top: 1px solid rgba(74, 144, 204, 0.08);
+text-align: center;
+}
+
+.sidebar-footer span {
+font-size: 11px;
+color: var(–text-muted);
+opacity: 0.5;
+letter-spacing: 1px;
+font-style: italic;
+}
+
+/* ═══════ MAIN CONTENT ═══════ */
+.main-content {
+flex: 1;
+height: 100vh;
+position: relative;
+z-index: 5;
+display: flex;
+flex-direction: column;
+}
+
+/* ── Welcome screen ── */
+.welcome-screen {
+flex: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 40px;
+text-align: center;
+position: relative;
+overflow: hidden;
+}
+
+.welcome-screen::before {
+content: ‘’;
+position: absolute;
+inset: 0;
+background:
+radial-gradient(ellipse 400px 300px at 50% 40%, rgba(42, 94, 160, 0.06), transparent),
+radial-gradient(ellipse 200px 200px at 70% 70%, rgba(245, 200, 66, 0.04), transparent);
+pointer-events: none;
+}
+
+.welcome-art {
+position: relative;
+margin-bottom: 40px;
+}
+
+.welcome-star {
+width: 120px;
+height: 120px;
+position: relative;
+}
+
+.welcome-star .ring {
+position: absolute;
+border-radius: 50%;
+border: 1.5px solid;
+animation: starSpin 12s linear infinite;
+}
+
+.welcome-star .ring:nth-child(1) {
+inset: 0;
+border-color: rgba(245, 200, 66, 0.3);
+}
+.welcome-star .ring:nth-child(2) {
+inset: 15px;
+border-color: rgba(74, 144, 204, 0.3);
+animation-duration: 8s;
+animation-direction: reverse;
+}
+.welcome-star .ring:nth-child(3) {
+inset: 30px;
+border-color: rgba(245, 200, 66, 0.2);
+animation-duration: 15s;
+}
+
+.welcome-star .core {
+position: absolute;
+inset: 40px;
+border-radius: 50%;
+background: radial-gradient(circle, var(–star-yellow), var(–star-orange));
+box-shadow: 0 0 40px rgba(245, 200, 66, 0.5), 0 0 80px rgba(245, 200, 66, 0.2);
+animation: moonPulse 3s ease-in-out infinite;
+}
+
+@keyframes starSpin {
+from { transform: rotate(0deg); }
+to { transform: rotate(360deg); }
+}
+
+.welcome-title {
+font-family: ‘Playfair Display’, serif;
+font-size: clamp(28px, 4vw, 42px);
+font-weight: 700;
+font-style: italic;
+color: var(–accent-gold);
+text-shadow: 0 0 30px rgba(245, 200, 66, 0.3);
+margin-bottom: 12px;
+}
+
+.welcome-desc {
+font-size: 16px;
+color: var(–text-muted);
+max-width: 500px;
+line-height: 1.7;
+font-style: italic;
+}
+
+.welcome-hint {
+margin-top: 40px;
+display: flex;
+align-items: center;
+gap: 10px;
+color: var(–text-muted);
+opacity: 0.5;
+font-size: 13px;
+font-style: italic;
+}
+
+.welcome-hint .arrow {
+font-size: 18px;
+animation: pointLeft 1.5s ease-in-out infinite;
+}
+
+@keyframes pointLeft {
+0%, 100% { transform: translateX(0); }
+50% { transform: translateX(-6px); }
+}
+
+/* ── Iframe container ── */
+.iframe-container {
+flex: 1;
+position: relative;
+display: none;
+}
+
+.iframe-container.active {
+display: flex;
+}
+
+.iframe-container iframe {
+width: 100%;
+height: 100%;
+border: none;
+background: var(–sky-deep);
+}
+
+/* ── Top bar inside main ── */
+.topbar {
+display: none;
+align-items: center;
+justify-content: space-between;
+padding: 12px 24px;
+background: rgba(10, 18, 38, 0.85);
+border-bottom: 1px solid rgba(74, 144, 204, 0.12);
+backdrop-filter: blur(12px);
+}
+
+.topbar.active {
+display: flex;
+}
+
+.topbar-title {
+font-family: ‘Playfair Display’, serif;
+font-size: 15px;
+font-style: italic;
+color: var(–accent-gold);
+}
+
+.topbar-close {
+background: rgba(200, 60, 60, 0.15);
+border: 1px solid rgba(200, 60, 60, 0.25);
+color: #e87070;
+padding: 6px 16px;
+border-radius: 8px;
+cursor: pointer;
+font-family: ‘Cormorant Garamond’, serif;
+font-size: 12px;
+letter-spacing: 1px;
+transition: all 0.3s;
+}
+
+.topbar-close:hover {
+background: rgba(200, 60, 60, 0.3);
+border-color: rgba(200, 60, 60, 0.5);
+color: #ff8888;
+}
+
+/* ═══════ ANIMATIONS ═══════ */
+.fade-in {
+animation: fadeIn 0.6s ease-out forwards;
+}
+
+@keyframes fadeIn {
+from { opacity: 0; transform: translateY(10px); }
+to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════ RESPONSIVE ═══════ */
+@media (max-width: 768px) {
+:root { –sidebar-w: 240px; }
+.sidebar-title { font-size: 18px; }
+.nav-btn { padding: 12px 14px; }
+.nav-icon { width: 40px; height: 40px; font-size: 17px; }
+.info-card { display: none; }
+}
+
+@media (max-width: 560px) {
+:root { –sidebar-w: 64px; }
+.sidebar-header { padding: 16px 8px 12px; }
+.logo-moon { width: 40px; height: 40px; }
+.sidebar-title, .sidebar-subtitle, .divider, .nav-label, .nav-text, .info-card { display: none; }
+.nav-section { padding: 12px 8px; }
+.nav-btn { padding: 10px; justify-content: center; }
+.nav-btn:hover { transform: translateX(0); }
+.sidebar-footer span { font-size: 7px; writing-mode: vertical-rl; }
+}
+</style>
+
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+
+<!-- ═══════ SIDEBAR ═══════ -->
+
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <div class="logo-moon"></div>
+    <div class="sidebar-title">A Noite Estrelada</div>
+    <div class="sidebar-subtitle">Campos Elétricos</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="nav-section">
+    <div class="nav-label">Módulos</div>
+
+```
+<button class="nav-btn" id="btn-home" onclick="showHome()">
+  <div class="nav-icon">🌙</div>
+  <div class="nav-text">
+    <div class="nav-text-title">Início</div>
+    <div class="nav-text-desc">Tela principal</div>
+  </div>
+</button>
+
+<button class="nav-btn" id="btn-sim" onclick="loadModule('sim')">
+  <div class="nav-icon">⚡</div>
+  <div class="nav-text">
+    <div class="nav-text-title">Simulador</div>
+    <div class="nav-text-desc">Campo Elétrico Interativo</div>
+  </div>
+</button>
+
+<button class="nav-btn" id="btn-puzzle" onclick="loadModule('puzzle')">
+  <div class="nav-icon">🧩</div>
+  <div class="nav-text">
+    <div class="nav-text-title">Puzzle</div>
+    <div class="nav-text-desc">Jogo de Campos Elétricos</div>
+  </div>
+</button>
+```
+
+  </div>
+
+  <div class="info-card">
+    <p>
+      <span class="highlight">"Eu sonho minha pintura, e então pinto meu sonho."</span>
+      <br><br>
+      Explore campos elétricos através da arte de Van Gogh.
+    </p>
+  </div>
+
+  <div class="sidebar-footer">
+    <span>@experimentajoao</span>
+  </div>
+</nav>
+
+<!-- ═══════ MAIN CONTENT ═══════ -->
+
+<div class="main-content">
+
+  <!-- Top bar (visible when module is loaded) -->
+
+  <div class="topbar" id="topbar">
+    <div class="topbar-title" id="topbar-title"></div>
+    <button class="topbar-close" onclick="showHome()">✕&ensp;Fechar módulo</button>
+  </div>
+
+  <!-- Welcome / Home screen -->
+
+  <div class="welcome-screen" id="welcome">
+    <div class="welcome-art">
+      <div class="welcome-star">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="core"></div>
+      </div>
+    </div>
+    <div class="welcome-title">Bem-vindo ao Laboratório</div>
+    <div class="welcome-desc">
+      Onde a física encontra a arte — simule campos elétricos e resolva puzzles inspirados na obra-prima de Vincent van Gogh.
+    </div>
+    <div class="welcome-hint">
+      <span class="arrow">←</span>
+      Selecione um módulo no menu
+    </div>
+  </div>
+
+  <!-- Simulator iframe -->
+
+  <div class="iframe-container" id="frame-sim">
+    <iframe id="iframe-sim" title="Simulador de Campo Elétrico"></iframe>
+  </div>
+
+  <!-- Puzzle iframe -->
+
+  <div class="iframe-container" id="frame-puzzle">
+    <iframe id="iframe-puzzle" title="Puzzle de Campos Elétricos"></iframe>
+  </div>
+
+</div>
+
+<script>
+// ═══════ STARFIELD CANVAS ═══════
+(function() {
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  let W, H, stars = [], swirls = [];
+
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  function createStars() {
+    stars = [];
+    for (let i = 0; i < 200; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H,
+        r: Math.random() * 1.8 + 0.3,
+        alpha: Math.random() * 0.6 + 0.2,
+        speed: Math.random() * 0.003 + 0.001,
+        phase: Math.random() * Math.PI * 2,
+        color: Math.random() > 0.7 ? '#f5c842' : (Math.random() > 0.5 ? '#a0d4ff' : '#ffffff')
+      });
+    }
+    // Big glowing stars
+    for (let i = 0; i < 8; i++) {
+      stars.push({
+        x: Math.random() * W,
+        y: Math.random() * H * 0.6,
+        r: Math.random() * 3 + 2,
+        alpha: 0.7,
+        speed: Math.random() * 0.002 + 0.001,
+        phase: Math.random() * Math.PI * 2,
+        color: '#f5c842',
+        glow: true
+      });
+    }
+  }
+
+  function createSwirls() {
+    swirls = [];
+    for (let i = 0; i < 5; i++) {
+      swirls.push({
+        cx: Math.random() * W,
+        cy: Math.random() * H * 0.5 + 50,
+        radius: Math.random() * 80 + 40,
+        angle: Math.random() * Math.PI * 2,
+        speed: (Math.random() - 0.5) * 0.003,
+        opacity: Math.random() * 0.04 + 0.01
+      });
+    }
+  }
+
+  let t = 0;
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    t += 0.016;
+
+    // Draw swirls
+    for (const s of swirls) {
+      s.angle += s.speed;
+      ctx.beginPath();
+      for (let a = 0; a < Math.PI * 4; a += 0.05) {
+        const r = s.radius + a * 8;
+        const x = s.cx + Math.cos(a + s.angle) * r;
+        const y = s.cy + Math.sin(a + s.angle) * r * 0.4;
+        if (a === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.strokeStyle = `rgba(74, 144, 204, ${s.opacity})`;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    // Draw stars
+    for (const s of stars) {
+      const flicker = Math.sin(t * s.speed * 600 + s.phase) * 0.3 + 0.7;
+      const a = s.alpha * flicker;
+
+      if (s.glow) {
+        const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 5);
+        grad.addColorStop(0, `rgba(245, 200, 66, ${a * 0.5})`);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = s.color.replace(')', `, ${a})`).replace('rgb', 'rgba').replace('#', '');
+      // Just use hex with globalAlpha
+      ctx.globalAlpha = a;
+      ctx.fillStyle = s.color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  window.addEventListener('resize', () => { resize(); createStars(); createSwirls(); });
+  resize();
+  createStars();
+  createSwirls();
+  draw();
+})();
+
+// ═══════ NAVIGATION ═══════
+const modules = {
+  sim: { title: 'Simulador — Campo Elétrico', file: 'campo.html' },
+  puzzle: { title: 'Puzzle — Campos Elétricos', file: 'puzzle.html' }
+};
+
+let currentModule = null;
+
+function setActiveBtn(id) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (id) document.getElementById(id).classList.add('active');
+}
+
+function showHome() {
+  currentModule = null;
+  document.getElementById('welcome').style.display = 'flex';
+  document.getElementById('topbar').classList.remove('active');
+  document.querySelectorAll('.iframe-container').forEach(f => f.classList.remove('active'));
+  // Clear iframe src to free resources
+  document.getElementById('iframe-sim').src = '';
+  document.getElementById('iframe-puzzle').src = '';
+  setActiveBtn('btn-home');
+}
+
+function loadModule(key) {
+  if (currentModule === key) return;
+  currentModule = key;
+  const mod = modules[key];
+
+  // Hide everything first
+  document.getElementById('welcome').style.display = 'none';
+  document.querySelectorAll('.iframe-container').forEach(f => f.classList.remove('active'));
+
+  // Clear non-active iframes
+  for (const k of Object.keys(modules)) {
+    if (k !== key) {
+      document.getElementById(`iframe-${k}`).src = '';
+    }
+  }
+
+  // Show topbar
+  const topbar = document.getElementById('topbar');
+  topbar.classList.add('active');
+  document.getElementById('topbar-title').textContent = mod.title;
+
+  // Show and load iframe
+  const container = document.getElementById(`frame-${key}`);
+  container.classList.add('active');
+  const iframe = document.getElementById(`iframe-${key}`);
+  if (!iframe.src || iframe.src === '' || iframe.src === 'about:blank') {
+    iframe.src = mod.file;
+  }
+
+  setActiveBtn(`btn-${key}`);
+}
+
+// Start on home
+showHome();
+</script>
+
+</body>
+</html>
