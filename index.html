@@ -1,788 +1,1496 @@
 <!DOCTYPE html>
-
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Noite Estrelada — Painel de Acesso</title>
+<title>Noite Estrelada — Laboratório de Física</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <style>
-  :root {
-    --sky-deep: #070d1f;
-    --sky-mid: #0f1d3a;
-    --sky-blue: #1a3a6a;
-    --swirl-blue: #2a5ea0;
-    --swirl-light: #4a90cc;
-    --star-yellow: #f5c842;
-    --star-orange: #e8a830;
-    --moon-glow: #f0e8a0;
-    --cypress-dark: #0a1a10;
-    --village-warm: #1a2840;
-    --text-primary: #f0e6d0;
-    --text-muted: #8a9ab5;
-    --accent-gold: #f5c842;
-    --panel-bg: rgba(10, 18, 38, 0.92);
-    --sidebar-w: 300px;
-  }
-
-- { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
-font-family: ‘Cormorant Garamond’, Georgia, serif;
-background: var(–sky-deep);
-color: var(–text-primary);
-height: 100vh;
-overflow: hidden;
-display: flex;
+/* ═══ DESIGN SYSTEM & SIDEBAR ═══ */
+:root {
+  --sky-deep:#070d1f; --sky-mid:#0f1d3a; --star-yellow:#f5c842; --star-orange:#e8a830;
+  --moon-glow:#f0e8a0; --text-primary:#f0e6d0; --text-muted:#8a9ab5; --accent-gold:#f5c842;
+  --sidebar-w:300px;
 }
 
-/* ═══════ ANIMATED STARRY BACKGROUND ═══════ */
-#starfield {
-position: fixed;
-inset: 0;
-z-index: 0;
-pointer-events: none;
+* { box-sizing: border-box; }
+body { 
+  margin: 0; padding: 0; font-family: 'Cormorant Garamond', serif; 
+  background: var(--sky-deep); color: var(--text-primary); 
+  height: 100vh; overflow: hidden; display: flex; 
 }
 
-/* ═══════ SIDEBAR ═══════ */
+#panel-stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+
 .sidebar {
-position: relative;
-z-index: 10;
-width: var(–sidebar-w);
-min-width: var(–sidebar-w);
-height: 100vh;
-background: linear-gradient(195deg, rgba(15, 29, 58, 0.97) 0%, rgba(7, 13, 31, 0.98) 100%);
-border-right: 1px solid rgba(42, 94, 160, 0.2);
-display: flex;
-flex-direction: column;
-backdrop-filter: blur(20px);
-box-shadow: 4px 0 40px rgba(0, 0, 0, 0.5);
-overflow: hidden;
+  position: relative; z-index: 10; width: var(--sidebar-w); height: 100vh;
+  background: linear-gradient(195deg, rgba(15, 29, 58, 0.98), rgba(7, 13, 31, 0.99));
+  border-right: 1px solid rgba(245, 200, 66, 0.2);
+  display: flex; flex-direction: column; backdrop-filter: blur(20px);
+  box-shadow: 10px 0 50px rgba(0,0,0,0.8);
 }
 
-.sidebar::before {
-content: ‘’;
-position: absolute;
-inset: 0;
-background:
-radial-gradient(ellipse 120px 120px at 70% 15%, rgba(245, 200, 66, 0.06) 0%, transparent 70%),
-radial-gradient(ellipse 80px 80px at 30% 85%, rgba(42, 94, 160, 0.08) 0%, transparent 70%);
-pointer-events: none;
-}
-
-/* Swirl decoration */
-.sidebar::after {
-content: ‘’;
-position: absolute;
-top: -60px;
-right: -60px;
-width: 200px;
-height: 200px;
-border-radius: 50%;
-border: 2px solid rgba(74, 144, 204, 0.07);
-pointer-events: none;
-animation: swirlSlow 25s linear infinite;
-}
-
-@keyframes swirlSlow {
-from { transform: rotate(0deg); }
-to { transform: rotate(360deg); }
-}
-
-/* ── Logo / Header ── */
-.sidebar-header {
-padding: 32px 28px 20px;
-text-align: center;
-position: relative;
-}
-
+.sidebar-header { padding: 40px 24px 20px; text-align: center; }
 .logo-moon {
-width: 72px;
-height: 72px;
-margin: 0 auto 14px;
-border-radius: 50%;
-background: radial-gradient(circle at 35% 40%, var(–moon-glow) 0%, var(–star-yellow) 40%, var(–star-orange) 80%);
-box-shadow:
-0 0 30px rgba(245, 200, 66, 0.4),
-0 0 60px rgba(245, 200, 66, 0.15),
-0 0 100px rgba(245, 200, 66, 0.08);
-animation: moonPulse 4s ease-in-out infinite;
-position: relative;
+  width: 80px; height: 80px; margin: 0 auto 20px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 40%, var(--moon-glow), var(--star-yellow) 40%, var(--star-orange) 80%);
+  box-shadow: 0 0 40px rgba(245, 200, 66, 0.4); animation: moonPulse 4s ease-in-out infinite;
 }
+@keyframes moonPulse { 0%, 100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.05); opacity: 1; } }
 
-.logo-moon::after {
-content: ‘’;
-position: absolute;
-top: 8px;
-left: 6px;
-width: 55px;
-height: 55px;
-border-radius: 50%;
-background: radial-gradient(circle at 60% 50%, transparent 40%, rgba(232, 168, 48, 0.3) 100%);
-}
+.sidebar-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; font-style: italic; color: var(--accent-gold); }
+.sidebar-subtitle { font-size: 12px; color: var(--text-muted); letter-spacing: 4px; text-transform: uppercase; margin-top: 8px; }
 
-@keyframes moonPulse {
-0%, 100% { box-shadow: 0 0 30px rgba(245,200,66,0.4), 0 0 60px rgba(245,200,66,0.15); }
-50% { box-shadow: 0 0 40px rgba(245,200,66,0.55), 0 0 80px rgba(245,200,66,0.25); }
-}
-
-.sidebar-title {
-font-family: ‘Playfair Display’, Georgia, serif;
-font-size: 22px;
-font-weight: 700;
-font-style: italic;
-color: var(–accent-gold);
-text-shadow: 0 0 20px rgba(245, 200, 66, 0.3);
-letter-spacing: 1px;
-line-height: 1.2;
-}
-
-.sidebar-subtitle {
-font-size: 11px;
-color: var(–text-muted);
-letter-spacing: 3px;
-text-transform: uppercase;
-margin-top: 6px;
-font-family: ‘Cormorant Garamond’, serif;
-}
-
-.divider {
-height: 1px;
-margin: 0 28px;
-background: linear-gradient(90deg, transparent, rgba(74, 144, 204, 0.2), rgba(245, 200, 66, 0.15), rgba(74, 144, 204, 0.2), transparent);
-}
-
-/* ── Navigation ── */
-.nav-section {
-padding: 24px 20px;
-flex: 1;
-display: flex;
-flex-direction: column;
-gap: 10px;
-}
-
-.nav-label {
-font-size: 9px;
-letter-spacing: 3px;
-text-transform: uppercase;
-color: var(–text-muted);
-opacity: 0.6;
-padding: 0 8px;
-margin-bottom: 4px;
-font-family: ‘Cormorant Garamond’, serif;
-}
-
+.nav-section { padding: 30px 20px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
 .nav-btn {
-position: relative;
-display: flex;
-align-items: center;
-gap: 16px;
-padding: 16px 18px;
-border-radius: 14px;
-border: 1.5px solid transparent;
-background: transparent;
-cursor: pointer;
-transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-text-align: left;
-font-family: ‘Cormorant Garamond’, serif;
-overflow: hidden;
+  display: flex; align-items: center; gap: 15px; padding: 15px; border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(245, 200, 66, 0.1);
+  cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); color: var(--text-primary);
+  text-align: left;
+}
+.nav-btn:hover { background: rgba(245, 200, 66, 0.1); border-color: var(--accent-gold); transform: translateX(8px); }
+.nav-btn.active { background: rgba(245, 200, 66, 0.15); border-color: var(--accent-gold); box-shadow: 0 0 20px rgba(245, 200, 66, 0.1); }
+
+.nav-icon { width: 40px; height: 40px; border-radius: 50%; background: #0a1628; display: flex; align-items: center; justify-content: center; border: 1px solid var(--accent-gold); }
+.nav-icon svg { width: 20px; fill: var(--accent-gold); }
+
+.info-card { 
+  margin: 20px; padding: 20px; background: rgba(0,0,0,0.3); border-radius: 15px; 
+  border-left: 3px solid var(--accent-gold); font-size: 14px; font-style: italic; line-height: 1.6;
 }
 
-.nav-btn::before {
-content: ‘’;
-position: absolute;
-inset: 0;
-border-radius: 14px;
-opacity: 0;
-background: linear-gradient(135deg, rgba(26, 58, 107, 0.5), rgba(20, 40, 80, 0.6));
-transition: opacity 0.35s;
+/* ═══ MAIN CONTENT ═══ */
+.main-content { 
+  flex: 1; height: 100vh; position: relative; z-index: 5; 
+  display: flex; flex-direction: column; overflow: hidden; 
+}
+.topbar { 
+  padding: 15px 30px; display: none; align-items: center; justify-content: space-between;
+  background: rgba(7, 13, 31, 0.9); border-bottom: 1px solid rgba(245, 200, 66, 0.2); 
+}
+.topbar.on { display: flex; }
+.topbar-close { 
+  background: transparent; border: 1px solid #e07070; color: #e07070; 
+  padding: 8px 16px; border-radius: 20px; cursor: pointer; transition: 0.3s;
+}
+.topbar-close:hover { background: #e07070; color: white; }
+
+#home-view { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+.wtitle { font-family: 'Playfair Display', serif; font-size: 48px; color: var(--accent-gold); margin-bottom: 20px; }
+.wdesc { max-width: 600px; font-size: 20px; line-height: 1.8; color: var(--text-muted); font-style: italic; }
+
+.view { display: none; flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; position: relative; }
+.view.on { display: flex; flex-direction: column; }
+
+@media(max-width: 800px) {
+  :root { --sidebar-w: 80px; }
+  .sidebar-title, .sidebar-subtitle, .nav-text, .info-card, .sidebar-footer { display: none; }
+  .nav-btn { justify-content: center; padding: 15px 0; }
+  .nav-btn:hover { transform: none; }
 }
 
-.nav-btn:hover::before {
-opacity: 1;
+/* ═══ PUZZLE SCOPED ═══ */
+#puzzle-view * { margin: 0; padding: 0; box-sizing: border-box; }
+#puzzle-view {
+  background: linear-gradient(170deg, #0b1e3d 0%, #142850 40%, #1a3a6b 70%, #0e2248 100%);
+  font-family: 'Georgia', 'Palatino Linotype', 'Book Antiqua', serif;
+}
+#pz-starCanvas {
+  position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;
+}
+.page { 
+  position: relative; z-index: 2; display: flex; flex-direction: column; 
+  align-items: center; justify-content: center; min-height: 100%; padding: 20px; 
 }
 
-.nav-btn:hover {
-border-color: rgba(74, 144, 204, 0.25);
-transform: translateX(4px);
+/* Menu */
+.moon { font-size: 56px; margin-bottom: 4px; filter: drop-shadow(0 0 15px rgba(245,200,66,0.5)); text-align: center; }
+.title { color: #f5c842; font-size: clamp(24px, 5vw, 36px); font-weight: 700; margin: 0 0 2px 0; letter-spacing: 2px; text-shadow: 0 0 30px rgba(245,200,66,0.4), 0 2px 4px rgba(0,0,0,0.6); font-style: italic; text-align: center; }
+.subtitle { color: #8a9ab5; font-size: 13px; margin: 0 0 6px 0; letter-spacing: 3px; text-transform: uppercase; font-family: 'Courier New', monospace; font-weight: 400; text-align: center; }
+.level-list { display: flex; flex-direction: column; gap: 14px; width: 100%; max-width: 360px; margin: 0 auto; }
+.level-btn {
+  background: linear-gradient(135deg, rgba(26,58,107,0.8), rgba(20,40,80,0.9));
+  border: 2px solid rgba(60,120,200,0.25); border-radius: 14px; padding: 18px 22px;
+  cursor: pointer; display: flex; align-items: center; gap: 16px;
+  transition: all 0.3s ease; backdrop-filter: blur(6px); text-align: left;
+}
+.level-btn.completed {
+  background: linear-gradient(135deg, rgba(245,200,66,0.12), rgba(245,200,66,0.04));
+  border-color: rgba(245,200,66,0.4);
+}
+.level-btn:hover { transform: translateY(-3px) scale(1.01); box-shadow: 0 10px 35px rgba(245,200,66,0.15); border-color: rgba(245,200,66,0.6); }
+.level-icon {
+  width: 50px; height: 50px; border-radius: 50%; flex-shrink: 0;
+  background: radial-gradient(circle, #1e5090, #142850);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; box-shadow: 0 0 15px rgba(30,80,144,0.3);
+  border: 2px solid rgba(60,140,220,0.3); color: #3a8fd4; font-weight: 800; font-family: serif;
+}
+.level-btn.completed .level-icon {
+  background: radial-gradient(circle, #f5c842, #d4792a);
+  box-shadow: 0 0 20px rgba(245,200,66,0.4); border-color: #f5c842; color: #5a3000; font-size: 22px;
+}
+.level-title { color: #f0e6d0; font-size: 17px; font-weight: 700; font-style: italic; }
+.level-sub { color: #8a9ab5; font-size: 11px; margin-top: 3px; }
+.level-best { color: #f5c842; font-size: 10px; margin-top: 4px; font-family: monospace; }
+.level-arrow { color: #f5c842; font-size: 20px; opacity: 0.6; }
+
+/* Game header */
+.game-header { display: flex; align-items: center; justify-content: space-between; width: 100%; max-width: 400px; margin-bottom: 14px; }
+.btn-sm {
+  background: rgba(20,40,80,0.6); border: 1px solid rgba(60,140,220,0.2); border-radius: 10px;
+  color: #8a9ab5; padding: 8px 14px; cursor: pointer; font-size: 12px; font-family: inherit;
+  transition: all 0.2s; backdrop-filter: blur(4px);
+}
+.btn-sm:hover { border-color: #f5c842; color: #f5c842; }
+.btn-sm.active { background: rgba(245,200,66,0.12); border-color: rgba(245,200,66,0.4); color: #f5c842; }
+.game-title { color: #f5c842; font-size: 16px; font-weight: 700; font-style: italic; text-shadow: 0 0 15px rgba(245,200,66,0.3); text-align: center; }
+.game-sub { color: #8a9ab5; font-size: 10px; margin-top: 2px; text-align: center; }
+
+/* Stats */
+.stats {
+  display: flex; gap: 20px; margin-bottom: 14px; align-items: center;
+  background: rgba(20,40,80,0.5); border-radius: 12px; padding: 10px 28px;
+  border: 1px solid rgba(60,140,220,0.12); backdrop-filter: blur(4px);
+}
+.stat-label { color: #8a9ab5; font-size: 8px; letter-spacing: 2px; text-transform: uppercase; font-family: monospace; text-align: center; }
+.stat-val { font-size: 24px; font-weight: 700; font-family: 'Courier New', monospace; text-align: center; }
+.stat-div { width: 1px; height: 36px; background: rgba(60,140,220,0.15); }
+
+/* Reference */
+.ref-img { margin-bottom: 12px; border-radius: 12px; overflow: hidden; border: 2px solid rgba(245,200,66,0.3); box-shadow: 0 0 25px rgba(245,200,66,0.15); transform: rotate(-1deg); display: none; }
+.ref-img.show { display: block; }
+.ref-img img { display: block; }
+
+/* Puzzle grid */
+.puzzle-wrap {
+  position: relative; border-radius: 16px; overflow: hidden;
+  border: 3px solid rgba(60,120,200,0.2);
+  box-shadow: 0 0 40px rgba(20,50,100,0.3), inset 0 0 30px rgba(0,0,0,0.2);
+  transition: all 0.6s ease; outline: 2px solid rgba(140,120,80,0.1); outline-offset: 4px;
+}
+.puzzle-wrap.solved { border-color: rgba(245,200,66,0.7); box-shadow: 0 0 50px rgba(245,200,66,0.3), inset 0 0 40px rgba(245,200,66,0.05); }
+.puzzle-overlay {
+  position: absolute; inset: 0; z-index: 10; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(200,180,140,0.015) 2px, rgba(200,180,140,0.015) 4px);
+  mix-blend-mode: overlay;
+}
+.tile {
+  position: absolute; cursor: pointer; transition: none;
+}
+.tile.animating { transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1); }
+.tile.selected { outline: 3px solid rgba(245,200,66,0.9); outline-offset: -3px; box-shadow: inset 0 0 35px rgba(245,200,66,0.3); filter: brightness(1.25) saturate(1.2); z-index: 5; }
+.tile-border { position: absolute; inset: 0; border: 1px solid rgba(200,180,140,0.08); pointer-events: none; }
+.tile-num { position: absolute; bottom: 3px; right: 5px; font-size: 11px; font-weight: 700; font-family: 'Courier New', monospace; pointer-events: none; color: rgba(200,180,140,0.4); text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+.tile-num.correct { color: rgba(245,200,66,0.8); }
+.tile-glow { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle, rgba(245,200,66,0.1) 0%, transparent 70%); }
+
+/* Solved */
+.solved-msg { margin-top: 22px; text-align: center; animation: fadeUp 0.6s ease; }
+.solved-title { color: #f5c842; font-size: 22px; font-weight: 700; font-style: italic; letter-spacing: 2px; text-shadow: 0 0 25px rgba(245,200,66,0.5); margin-bottom: 4px; }
+.solved-info { color: #8a9ab5; font-size: 13px; margin-bottom: 4px; font-style: italic; }
+.solved-record { color: #e8a020; font-size: 11px; margin-bottom: 16px; font-family: monospace; }
+.solved-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.btn-replay {
+  background: rgba(20,40,80,0.7); border: 2px solid rgba(60,140,220,0.3); border-radius: 12px;
+  color: #3a8fd4; padding: 12px 24px; cursor: pointer; font-size: 14px; font-weight: 700;
+  font-family: inherit; font-style: italic; transition: all 0.3s;
+}
+.btn-replay:hover { border-color: #f5c842; color: #f5c842; }
+.btn-next {
+  background: linear-gradient(135deg, #f5c842, #d4792a); border: none; border-radius: 12px;
+  color: #3a1800; padding: 12px 24px; cursor: pointer; font-size: 14px; font-weight: 700;
+  font-family: inherit; font-style: italic; box-shadow: 0 4px 20px rgba(245,200,66,0.3); transition: all 0.3s;
+}
+.btn-next:hover { transform: scale(1.05); }
+
+/* Physics */
+.physics {
+  margin-top: 24px; padding: 16px 22px; background: rgba(20,40,80,0.4); border-radius: 14px;
+  border: 1px solid rgba(60,140,220,0.12); max-width: 450px; width: 100%;
+  backdrop-filter: blur(4px); transform: rotate(-0.3deg);
+}
+.physics-label { color: #f5c842; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; font-weight: 700; font-family: monospace; }
+.physics-text { color: #8a9ab5; font-size: 12px; line-height: 1.8; font-style: italic; text-align: center; }
+.physics-text .yellow { color: #f5c842; }
+.physics-text .blue { color: #3a8fd4; }
+.physics-text code { color: #f0e6d0; font-family: monospace; font-style: normal; }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.nav-btn.active {
-border-color: rgba(245, 200, 66, 0.4);
-background: linear-gradient(135deg, rgba(245, 200, 66, 0.08), rgba(245, 200, 66, 0.02));
-}
-
-.nav-btn.active::before { opacity: 0; }
-
-.nav-btn.active .nav-icon {
-background: radial-gradient(circle, var(–star-yellow), var(–star-orange));
-box-shadow: 0 0 20px rgba(245, 200, 66, 0.35);
-border-color: var(–star-yellow);
-color: #3a2000;
-}
-
-.nav-icon {
-position: relative;
-z-index: 1;
-width: 46px;
-height: 46px;
-border-radius: 50%;
-background: radial-gradient(circle, rgba(30, 80, 144, 0.6), rgba(20, 40, 80, 0.8));
-border: 1.5px solid rgba(74, 144, 204, 0.3);
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 20px;
-flex-shrink: 0;
-transition: all 0.35s;
-box-shadow: 0 0 12px rgba(30, 80, 144, 0.2);
-}
-
-.nav-text {
-position: relative;
-z-index: 1;
-}
-
-.nav-text-title {
-font-family: ‘Playfair Display’, serif;
-font-size: 15px;
-font-weight: 600;
-font-style: italic;
-color: var(–text-primary);
-transition: color 0.3s;
-}
-
-.nav-btn.active .nav-text-title {
-color: var(–accent-gold);
-}
-
-.nav-text-desc {
-font-size: 11px;
-color: var(–text-muted);
-margin-top: 2px;
-opacity: 0.7;
-}
-
-/* ── Info card ── */
-.info-card {
-margin: 0 20px 20px;
-padding: 18px 20px;
-background: rgba(20, 40, 80, 0.35);
-border-radius: 14px;
-border: 1px solid rgba(74, 144, 204, 0.1);
-backdrop-filter: blur(6px);
-}
-
-.info-card p {
-font-size: 12px;
-color: var(–text-muted);
-line-height: 1.7;
-font-style: italic;
-}
-
-.info-card .highlight {
-color: var(–accent-gold);
-}
-
-/* ── Footer ── */
-.sidebar-footer {
-padding: 16px 28px;
-border-top: 1px solid rgba(74, 144, 204, 0.08);
-text-align: center;
-}
-
-.sidebar-footer span {
-font-size: 11px;
-color: var(–text-muted);
-opacity: 0.5;
-letter-spacing: 1px;
-font-style: italic;
-}
-
-/* ═══════ MAIN CONTENT ═══════ */
-.main-content {
-flex: 1;
-height: 100vh;
-position: relative;
-z-index: 5;
-display: flex;
-flex-direction: column;
-}
-
-/* ── Welcome screen ── */
-.welcome-screen {
-flex: 1;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-padding: 40px;
-text-align: center;
-position: relative;
-overflow: hidden;
-}
-
-.welcome-screen::before {
-content: ‘’;
-position: absolute;
-inset: 0;
-background:
-radial-gradient(ellipse 400px 300px at 50% 40%, rgba(42, 94, 160, 0.06), transparent),
-radial-gradient(ellipse 200px 200px at 70% 70%, rgba(245, 200, 66, 0.04), transparent);
-pointer-events: none;
-}
-
-.welcome-art {
-position: relative;
-margin-bottom: 40px;
-}
-
-.welcome-star {
-width: 120px;
-height: 120px;
-position: relative;
-}
-
-.welcome-star .ring {
-position: absolute;
-border-radius: 50%;
-border: 1.5px solid;
-animation: starSpin 12s linear infinite;
-}
-
-.welcome-star .ring:nth-child(1) {
-inset: 0;
-border-color: rgba(245, 200, 66, 0.3);
-}
-.welcome-star .ring:nth-child(2) {
-inset: 15px;
-border-color: rgba(74, 144, 204, 0.3);
-animation-duration: 8s;
-animation-direction: reverse;
-}
-.welcome-star .ring:nth-child(3) {
-inset: 30px;
-border-color: rgba(245, 200, 66, 0.2);
-animation-duration: 15s;
-}
-
-.welcome-star .core {
-position: absolute;
-inset: 40px;
-border-radius: 50%;
-background: radial-gradient(circle, var(–star-yellow), var(–star-orange));
-box-shadow: 0 0 40px rgba(245, 200, 66, 0.5), 0 0 80px rgba(245, 200, 66, 0.2);
-animation: moonPulse 3s ease-in-out infinite;
-}
-
-@keyframes starSpin {
-from { transform: rotate(0deg); }
-to { transform: rotate(360deg); }
-}
-
-.welcome-title {
-font-family: ‘Playfair Display’, serif;
-font-size: clamp(28px, 4vw, 42px);
-font-weight: 700;
-font-style: italic;
-color: var(–accent-gold);
-text-shadow: 0 0 30px rgba(245, 200, 66, 0.3);
-margin-bottom: 12px;
-}
-
-.welcome-desc {
-font-size: 16px;
-color: var(–text-muted);
-max-width: 500px;
-line-height: 1.7;
-font-style: italic;
-}
-
-.welcome-hint {
-margin-top: 40px;
-display: flex;
-align-items: center;
-gap: 10px;
-color: var(–text-muted);
-opacity: 0.5;
-font-size: 13px;
-font-style: italic;
-}
-
-.welcome-hint .arrow {
-font-size: 18px;
-animation: pointLeft 1.5s ease-in-out infinite;
-}
-
-@keyframes pointLeft {
-0%, 100% { transform: translateX(0); }
-50% { transform: translateX(-6px); }
-}
-
-/* ── Iframe container ── */
-.iframe-container {
-flex: 1;
-position: relative;
-display: none;
-}
-
-.iframe-container.active {
-display: flex;
-}
-
-.iframe-container iframe {
-width: 100%;
-height: 100%;
-border: none;
-background: var(–sky-deep);
-}
-
-/* ── Top bar inside main ── */
-.topbar {
-display: none;
-align-items: center;
-justify-content: space-between;
-padding: 12px 24px;
-background: rgba(10, 18, 38, 0.85);
-border-bottom: 1px solid rgba(74, 144, 204, 0.12);
-backdrop-filter: blur(12px);
-}
-
-.topbar.active {
-display: flex;
-}
-
-.topbar-title {
-font-family: ‘Playfair Display’, serif;
-font-size: 15px;
-font-style: italic;
-color: var(–accent-gold);
-}
-
-.topbar-close {
-background: rgba(200, 60, 60, 0.15);
-border: 1px solid rgba(200, 60, 60, 0.25);
-color: #e87070;
-padding: 6px 16px;
-border-radius: 8px;
-cursor: pointer;
-font-family: ‘Cormorant Garamond’, serif;
-font-size: 12px;
-letter-spacing: 1px;
-transition: all 0.3s;
-}
-
-.topbar-close:hover {
-background: rgba(200, 60, 60, 0.3);
-border-color: rgba(200, 60, 60, 0.5);
-color: #ff8888;
-}
-
-/* ═══════ ANIMATIONS ═══════ */
-.fade-in {
-animation: fadeIn 0.6s ease-out forwards;
-}
-
-@keyframes fadeIn {
-from { opacity: 0; transform: translateY(10px); }
-to { opacity: 1; transform: translateY(0); }
-}
-
-/* ═══════ RESPONSIVE ═══════ */
-@media (max-width: 768px) {
-:root { –sidebar-w: 240px; }
-.sidebar-title { font-size: 18px; }
-.nav-btn { padding: 12px 14px; }
-.nav-icon { width: 40px; height: 40px; font-size: 17px; }
-.info-card { display: none; }
-}
-
-@media (max-width: 560px) {
-:root { –sidebar-w: 64px; }
-.sidebar-header { padding: 16px 8px 12px; }
-.logo-moon { width: 40px; height: 40px; }
-.sidebar-title, .sidebar-subtitle, .divider, .nav-label, .nav-text, .info-card { display: none; }
-.nav-section { padding: 12px 8px; }
-.nav-btn { padding: 10px; justify-content: center; }
-.nav-btn:hover { transform: translateX(0); }
-.sidebar-footer span { font-size: 7px; writing-mode: vertical-rl; }
-}
+/* Simulador restrições rigorosas de tamanho */
+#sim-view.on { overflow: hidden; background: #050d1a; }
+#root { flex: 1; width: 100%; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
 </style>
-
 </head>
 <body>
 
-<canvas id="starfield"></canvas>
-
-<!-- ═══════ SIDEBAR ═══════ -->
+<canvas id="panel-stars"></canvas>
 
 <nav class="sidebar">
   <div class="sidebar-header">
     <div class="logo-moon"></div>
-    <div class="sidebar-title">A Noite Estrelada</div>
-    <div class="sidebar-subtitle">Campos Elétricos</div>
+    <div class="sidebar-title">Noite Eletrostática</div>
+    <div class="sidebar-subtitle">Campos & Cores</div>
   </div>
-
-  <div class="divider"></div>
-
+  
   <div class="nav-section">
-    <div class="nav-label">Módulos</div>
+    <button class="nav-btn active" id="btn-home" onclick="go('home')">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></div>
+      <div class="nav-text">
+        <div style="font-weight:700; font-size:16px;">Galeria</div>
+        <div style="font-size:11px; opacity:0.6;">Início</div>
+      </div>
+    </button>
 
-```
-<button class="nav-btn" id="btn-home" onclick="showHome()">
-  <div class="nav-icon">🌙</div>
-  <div class="nav-text">
-    <div class="nav-text-title">Início</div>
-    <div class="nav-text-desc">Tela principal</div>
-  </div>
-</button>
+    <button class="nav-btn" id="btn-sim" onclick="go('sim')">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <div class="nav-text">
+        <div style="font-weight:700; font-size:16px;">Laboratório</div>
+        <div style="font-size:11px; opacity:0.6;">Simulador Interativo</div>
+      </div>
+    </button>
 
-<button class="nav-btn" id="btn-sim" onclick="loadModule('sim')">
-  <div class="nav-icon">⚡</div>
-  <div class="nav-text">
-    <div class="nav-text-title">Simulador</div>
-    <div class="nav-text-desc">Campo Elétrico Interativo</div>
-  </div>
-</button>
-
-<button class="nav-btn" id="btn-puzzle" onclick="loadModule('puzzle')">
-  <div class="nav-icon">🧩</div>
-  <div class="nav-text">
-    <div class="nav-text-title">Puzzle</div>
-    <div class="nav-text-desc">Jogo de Campos Elétricos</div>
-  </div>
-</button>
-```
-
+    <button class="nav-btn" id="btn-puzzle" onclick="go('puzzle')">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 0-3 3c0 .6.2 1.2.5 1.7L4 9v4.5h2a2 2 0 1 1 0 4H4.5V22h4.5v-1.5a2 2 0 1 1 4 0V22H18v-3.5h-1.5a2 2 0 1 0 0-4H18V9l-5.5-2.3c.3-.5.5-1.1.5-1.7a3 3 0 0 0-3-3z"/></svg></div>
+      <div class="nav-text">
+        <div style="font-weight:700; font-size:16px;">Puzzle</div>
+        <div style="font-size:11px; opacity:0.6;">Desafio de Campos</div>
+      </div>
+    </button>
   </div>
 
   <div class="info-card">
-    <p>
-      <span class="highlight">"Eu sonho minha pintura, e então pinto meu sonho."</span>
-      <br><br>
-      Explore campos elétricos através da arte de Van Gogh.
-    </p>
-  </div>
-
-  <div class="sidebar-footer">
-    <span>@experimentajoao</span>
+    "A pintura é uma fé que impõe o dever de não levar em conta a opinião pública." <br>
+    <span style="color:var(--accent-gold);">— Vincent van Gogh</span>
   </div>
 </nav>
 
-<!-- ═══════ MAIN CONTENT ═══════ -->
-
 <div class="main-content">
-
-  <!-- Top bar (visible when module is loaded) -->
-
   <div class="topbar" id="topbar">
-    <div class="topbar-title" id="topbar-title"></div>
-    <button class="topbar-close" onclick="showHome()">✕&ensp;Fechar módulo</button>
+    <div class="sidebar-title" id="topbar-title" style="font-size:18px;"></div>
+    <button class="topbar-close" onclick="go('home')">Sair do Módulo</button>
   </div>
 
-  <!-- Welcome / Home screen -->
-
-  <div class="welcome-screen" id="welcome">
-    <div class="welcome-art">
-      <div class="welcome-star">
-        <div class="ring"></div>
-        <div class="ring"></div>
-        <div class="ring"></div>
-        <div class="core"></div>
-      </div>
+  <div id="home-view">
+    <div class="wtitle">Física em Noite Estrelada</div>
+    <div class="wdesc">
+      Bem-vindo ao espaço onde a ciência encontra a arte. 
+      Utilize o menu lateral para simular cargas elétricas ou resolver os enigmas da luz.
     </div>
-    <div class="welcome-title">Bem-vindo ao Laboratório</div>
-    <div class="welcome-desc">
-      Onde a física encontra a arte — simule campos elétricos e resolva puzzles inspirados na obra-prima de Vincent van Gogh.
-    </div>
-    <div class="welcome-hint">
-      <span class="arrow">←</span>
-      Selecione um módulo no menu
+    <div style="margin-top:40px; color:var(--accent-gold); animation: bounce 2s infinite;">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      <div style="font-size:12px; letter-spacing:2px; margin-top:10px;">COMECE PELO MENU</div>
     </div>
   </div>
 
-  <!-- Simulator iframe -->
-
-  <div class="iframe-container" id="frame-sim">
-    <iframe id="iframe-sim" title="Simulador de Campo Elétrico"></iframe>
+  <div class="view" id="sim-view"><div id="root"></div></div>
+  <div class="view" id="puzzle-view">
+    <canvas id="pz-starCanvas"></canvas>
+    <div id="pz-menuPage" class="page">
+        <div style="text-align:center;">
+            <div class="moon">🌙</div>
+            <h1 class="title">Noite Estrelada</h1>
+            <p class="subtitle">Desafio de Campos Elétricos</p>
+            <div class="level-list" id="pz-levelList" style="margin: 30px auto;"></div>
+        </div>
+    </div>
+    <div id="pz-gamePage" class="page" style="display:none">
+        <div class="game-header">
+            <button class="btn-sm" id="pz-btnMenu">‹ Menu</button>
+            <div>
+              <div class="game-title" id="pz-gameTitle"></div>
+              <div class="game-sub" id="pz-gameSub"></div>
+            </div>
+            <button class="btn-sm" id="pz-btnHint">Dica 🌙</button>
+        </div>
+        <div class="stats">
+            <div><div class="stat-label">Tempo</div><div class="stat-val" id="pz-timerDisplay">0:00</div></div>
+            <div class="stat-div"></div>
+            <div><div class="stat-label">Movimentos</div><div class="stat-val" id="pz-movesDisplay">0</div></div>
+        </div>
+        <div class="ref-img" id="pz-refImg"><img id="pz-refImgEl" alt="Referência"></div>
+        <div class="puzzle-wrap" id="pz-puzzleWrap">
+            <div class="puzzle-overlay"></div>
+            <div id="pz-puzzleGrid"></div>
+        </div>
+        <div class="solved-msg" id="pz-solvedMsg" style="display:none">
+            <div class="solved-title">✦ Obra-Prima! ✦</div>
+            <div class="solved-btns">
+              <button class="btn-replay" id="pz-btnReplay">Reiniciar</button>
+              <button class="btn-next" id="pz-btnNext">Próximo Nível →</button>
+            </div>
+        </div>
+        <div class="physics"><div class="physics-label">Teoria de Campo</div><div class="physics-text" id="pz-physicsText"></div></div>
+    </div>
   </div>
-
-  <!-- Puzzle iframe -->
-
-  <div class="iframe-container" id="frame-puzzle">
-    <iframe id="iframe-puzzle" title="Puzzle de Campos Elétricos"></iframe>
-  </div>
-
 </div>
 
 <script>
-// ═══════ STARFIELD CANVAS ═══════
-(function() {
-  const canvas = document.getElementById('starfield');
-  const ctx = canvas.getContext('2d');
-  let W, H, stars = [], swirls = [];
-
-  function resize() {
-    W = canvas.width = window.innerWidth;
-    H = canvas.height = window.innerHeight;
-  }
-
-  function createStars() {
-    stars = [];
-    for (let i = 0; i < 200; i++) {
-      stars.push({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        r: Math.random() * 1.8 + 0.3,
-        alpha: Math.random() * 0.6 + 0.2,
-        speed: Math.random() * 0.003 + 0.001,
-        phase: Math.random() * Math.PI * 2,
-        color: Math.random() > 0.7 ? '#f5c842' : (Math.random() > 0.5 ? '#a0d4ff' : '#ffffff')
-      });
-    }
-    // Big glowing stars
-    for (let i = 0; i < 8; i++) {
-      stars.push({
-        x: Math.random() * W,
-        y: Math.random() * H * 0.6,
-        r: Math.random() * 3 + 2,
-        alpha: 0.7,
-        speed: Math.random() * 0.002 + 0.001,
-        phase: Math.random() * Math.PI * 2,
-        color: '#f5c842',
-        glow: true
-      });
-    }
-  }
-
-  function createSwirls() {
-    swirls = [];
-    for (let i = 0; i < 5; i++) {
-      swirls.push({
-        cx: Math.random() * W,
-        cy: Math.random() * H * 0.5 + 50,
-        radius: Math.random() * 80 + 40,
-        angle: Math.random() * Math.PI * 2,
-        speed: (Math.random() - 0.5) * 0.003,
-        opacity: Math.random() * 0.04 + 0.01
-      });
-    }
-  }
-
-  let t = 0;
-  function draw() {
-    ctx.clearRect(0, 0, W, H);
-    t += 0.016;
-
-    // Draw swirls
-    for (const s of swirls) {
-      s.angle += s.speed;
-      ctx.beginPath();
-      for (let a = 0; a < Math.PI * 4; a += 0.05) {
-        const r = s.radius + a * 8;
-        const x = s.cx + Math.cos(a + s.angle) * r;
-        const y = s.cy + Math.sin(a + s.angle) * r * 0.4;
-        if (a === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-      }
-      ctx.strokeStyle = `rgba(74, 144, 204, ${s.opacity})`;
-      ctx.lineWidth = 2;
-      ctx.stroke();
-    }
-
-    // Draw stars
-    for (const s of stars) {
-      const flicker = Math.sin(t * s.speed * 600 + s.phase) * 0.3 + 0.7;
-      const a = s.alpha * flicker;
-
-      if (s.glow) {
-        const grad = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 5);
-        grad.addColorStop(0, `rgba(245, 200, 66, ${a * 0.5})`);
-        grad.addColorStop(1, 'transparent');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r * 5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = s.color.replace(')', `, ${a})`).replace('rgb', 'rgba').replace('#', '');
-      // Just use hex with globalAlpha
-      ctx.globalAlpha = a;
-      ctx.fillStyle = s.color;
-      ctx.fill();
-      ctx.globalAlpha = 1;
-    }
-
-    requestAnimationFrame(draw);
-  }
-
-  window.addEventListener('resize', () => { resize(); createStars(); createSwirls(); });
-  resize();
-  createStars();
-  createSwirls();
-  draw();
+// Scripts de Navegação e Estrelas de Fundo
+(function(){
+  var c=document.getElementById('panel-stars'),ctx=c.getContext('2d'),W,H,stars=[];
+  function rs(){W=c.width=innerWidth;H=c.height=innerHeight;stars=[];for(var i=0;i<100;i++)stars.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.5,a:Math.random(),sp:Math.random()*0.002});}
+  function dr(t){ctx.clearRect(0,0,W,H);for(var s of stars){var alpha=Math.abs(Math.sin(t*s.sp+s.x));ctx.fillStyle=`rgba(245,200,66,${alpha*0.5})`;ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();}requestAnimationFrame(dr);}
+  addEventListener('resize',rs);rs();dr(0);
 })();
 
-// ═══════ NAVIGATION ═══════
-const modules = {
-  sim: { title: 'Simulador — Campo Elétrico', file: 'campo.html' },
-  puzzle: { title: 'Puzzle — Campos Elétricos', file: 'puzzle.html' }
+var simOk=false, pzOk=false;
+function go(id){
+  document.getElementById('home-view').style.display='none';
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+id).classList.add('active');
+  
+  if(id==='home'){
+    document.getElementById('topbar').classList.remove('on');
+    document.getElementById('home-view').style.display='flex';
+  } else {
+    document.getElementById('topbar').classList.add('on');
+    document.getElementById('topbar-title').textContent = id==='sim' ? 'Simulador Eletrostático' : 'Enigma de Van Gogh';
+    document.getElementById(id+'-view').classList.add('on');
+    if(id==='sim'&&!simOk){ initSim(); simOk=true; }
+    if(id==='puzzle'&&!pzOk){ initPuzzle(); pzOk=true; }
+  }
+}
+
+function initSim(){
+  try {
+    var scriptEl = document.getElementById('campo-babel');
+    if(scriptEl) {
+      var code = scriptEl.textContent;
+      var out = Babel.transform(code, {presets:['react']}).code;
+      new Function(out)();
+    }
+  } catch(e) {
+    console.error('Sim error:', e);
+    document.getElementById('root').innerHTML='<p style="color:#e07070;padding:20px;">Erro ao carregar simulador: '+e.message+'</p>';
+  }
+}
+
+function initPuzzle(){
+  try {
+    var scriptEl = document.getElementById('puzzle-code');
+    if(scriptEl) new Function(scriptEl.textContent)();
+  } catch(e) {
+    console.error('Puzzle error:', e);
+  }
+}
+</script>
+
+<script type="text/plain" id="campo-babel">
+    const { useState, useRef, useEffect, useCallback } = React;
+
+    const W = 1200, H = 650, SKY = 450;
+
+    const PAL = {
+      skyDeep: "#0a1628", skyMid: "#0f2044", skyLight: "#1a3a6a",
+      s1: "#162e5a", s2: "#1e4a7a", s3: "#2a6aaa", s4: "#4a90cc", s5: "#7ab8f0", s6: "#a0d4ff",
+      yellow: "#f0d848", orange: "#e8a830", highlightY: "#c8d86a",
+      positive: "#f0d848", negative: "#4a90ee", windowGlow: "#e8c840",
+      forceResultant: "#ff3b3b",
+    };
+
+    // Agora o simulador inicia com apenas 1 carga centralizada
+    const PRESETS = [
+      { x: 600, y: 220, charge: 600, positive: true, name: "Carga α" }
+    ];
+
+    const initCharges = () => PRESETS.map(c => ({
+      ...c, color: c.positive ? PAL.positive : PAL.negative, radius: 12 + Math.abs(c.charge) / 45,
+    }));
+
+    function eField(x, y, charges) {
+      let fx = 0, fy = 0;
+      for (const c of charges) {
+        const dx = x - c.x, dy = y - c.y;
+        const d2 = dx * dx + dy * dy + 150;
+        const d = Math.sqrt(d2);
+        const f = (c.positive ? 1 : -1) * Math.abs(c.charge) / d2;
+        fx += f * dx / d; fy += f * dy / d;
+      }
+      return { fx, fy };
+    }
+
+    function getForceOnCharge(targetIndex, charges) {
+      let fx = 0, fy = 0;
+      const target = charges[targetIndex];
+      const qTarget = (target.positive ? 1 : -1) * Math.abs(target.charge);
+
+      for (let i = 0; i < charges.length; i++) {
+        if (i === targetIndex) continue;
+        const c = charges[i];
+        const qSource = (c.positive ? 1 : -1) * Math.abs(c.charge);
+        const dx = target.x - c.x; 
+        const dy = target.y - c.y;
+        const d2 = dx * dx + dy * dy + 150; 
+        const d = Math.sqrt(d2);
+
+        const f = (qSource * qTarget) / d2;
+        fx += f * dx / d;
+        fy += f * dy / d;
+      }
+      return { fx, fy };
+    }
+
+    function traceFieldLines(charges) {
+      const lines = [];
+      const pos = charges.filter(c => c.positive);
+      const neg = charges.filter(c => !c.positive);
+      const sources = pos.length > 0 ? pos : [];
+      const totalQ = sources.reduce((s, c) => s + Math.abs(c.charge), 0) || 1;
+
+      for (const src of sources) {
+        const n = Math.round(14 + (Math.abs(src.charge) / totalQ) * 22);
+        for (let k = 0; k < n; k++) {
+          const ang = (k / n) * Math.PI * 2 + 0.15;
+          const r0 = src.radius + 5;
+          let cx = src.x + Math.cos(ang) * r0;
+          let cy = src.y + Math.sin(ang) * r0;
+          const pts = [{ x: cx, y: cy }];
+          let ended = false;
+          for (let s = 0; s < 350; s++) {
+            const { fx, fy } = eField(cx, cy, charges);
+            const mag = Math.sqrt(fx * fx + fy * fy) + 1e-9;
+            cx += (fx / mag) * 3.0;
+            cy += (fy / mag) * 3.0;
+            pts.push({ x: cx, y: cy });
+            for (const nq of neg) {
+              if ((cx - nq.x) ** 2 + (cy - nq.y) ** 2 < (nq.radius + 5) ** 2) { ended = true; break; }
+            }
+            if (ended) break;
+            for (const pq of pos) {
+              if (pq !== src && (cx - pq.x) ** 2 + (cy - pq.y) ** 2 < (pq.radius + 4) ** 2) { ended = true; break; }
+            }
+            if (ended) break;
+            if (cx < -50 || cx > W + 50 || cy < -50 || cy > SKY + 40) break;
+          }
+          if (pts.length > 5) lines.push({ pts, ended, fromPositive: true });
+        }
+      }
+
+      if (pos.length === 0 && neg.length > 0) {
+        for (const nq of neg) {
+          for (let k = 0; k < 20; k++) {
+            const ang = (k / 20) * Math.PI * 2;
+            let cx = Math.max(10, Math.min(W - 10, nq.x + Math.cos(ang) * 300));
+            let cy = Math.max(10, Math.min(SKY - 10, nq.y + Math.sin(ang) * 300));
+            const pts = [{ x: cx, y: cy }];
+            for (let s = 0; s < 350; s++) {
+              const { fx, fy } = eField(cx, cy, charges);
+              const mag = Math.sqrt(fx * fx + fy * fy) + 1e-9;
+              cx += (fx / mag) * 3.0;
+              cy += (fy / mag) * 3.0;
+              pts.push({ x: cx, y: cy });
+              if ((cx - nq.x) ** 2 + (cy - nq.y) ** 2 < (nq.radius + 5) ** 2) break;
+              if (cx < -50 || cx > W + 50 || cy < -50 || cy > SKY + 40) break;
+            }
+            if (pts.length > 5) lines.push({ pts, ended: true, fromPositive: false });
+          }
+        }
+      }
+      return lines;
+    }
+
+    function genAmbient(charges) {
+      const out = [];
+      for (let gx = 5; gx < W; gx += 38) {
+        for (let gy = 5; gy < SKY; gy += 38) {
+          let skip = false;
+          for (const c of charges) {
+            if ((gx - c.x) ** 2 + (gy - c.y) ** 2 < (c.radius + 55) ** 2) { skip = true; break; }
+          }
+          if (skip) continue;
+          let cx = gx + (Math.random() - 0.5) * 12;
+          let cy = gy + (Math.random() - 0.5) * 12;
+          const pts = [];
+          for (let i = 0; i < 5; i++) {
+            pts.push({ x: cx, y: cy });
+            const { fx, fy } = eField(cx, cy, charges);
+            const m = Math.sqrt(fx * fx + fy * fy) + 0.001;
+            cx += (-fy / m) * 5 + fx * 0.25;
+            cy += (fx / m) * 5 + fy * 0.25;
+          }
+          if (pts.length > 2) out.push(pts);
+        }
+      }
+      return out;
+    }
+
+    function drawArrow(ctx, x, y, angle, size, color, alpha) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.fillStyle = color;
+      ctx.globalAlpha = alpha;
+      ctx.beginPath();
+      ctx.moveTo(size, 0);
+      ctx.lineTo(-size * 0.6, -size * 0.5);
+      ctx.lineTo(-size * 0.3, 0);
+      ctx.lineTo(-size * 0.6, size * 0.5);
+      ctx.closePath();
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
+    function paintAmbient(ctx, pts, color, width, time, phase) {
+      if (pts.length < 2) return;
+      const r = parseInt(color.slice(1, 3), 16), g = parseInt(color.slice(3, 5), 16), b = parseInt(color.slice(5, 7), 16);
+      const sh = Math.sin(time * 0.004 + phase) * 0.18 + 0.82;
+      const twinkle = Math.pow(Math.sin(time * 0.012 + phase * 2), 6);
+      const fl = Math.sin(time * 0.006 + phase * 1.2) * 8 + twinkle * 40;
+      
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+      const alpha = Math.min(1, 0.14 * sh + twinkle * 0.3);
+      ctx.strokeStyle = `rgba(${Math.min(255, r + fl) | 0},${Math.min(255, g + fl * 0.5) | 0},${b},${alpha})`;
+      ctx.lineWidth = width;
+      ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length - 1; i++) {
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, (pts[i].x + pts[i + 1].x) / 2, (pts[i].y + pts[i + 1].y) / 2);
+      }
+      ctx.lineTo(pts[pts.length - 1].x, pts[pts.length - 1].y); ctx.stroke();
+    }
+
+    function paintChargeGlow(ctx, s, time) {
+      const { x, y, radius, color, positive } = s;
+      const pulse = Math.sin(time * 0.003 + (positive ? 0 : 3)) * 0.1 + 1;
+
+      for (let i = 6; i >= 0; i--) {
+        const rr = (radius + i * 13) * pulse;
+        const gr = ctx.createRadialGradient(x, y, 0, x, y, rr);
+        gr.addColorStop(0, color + Math.floor(0.045 * (6 - i) * 255).toString(16).padStart(2, "0"));
+        gr.addColorStop(1, "transparent");
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
+      }
+
+      if (positive) {
+        const cg = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        cg.addColorStop(0, "#fffef0"); cg.addColorStop(0.3, color); cg.addColorStop(0.7, color + "99"); cg.addColorStop(1, "transparent");
+        ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#fffdf5"; ctx.beginPath(); ctx.arc(x, y, radius * 0.27, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#332800";
+        ctx.font = `bold ${radius * 0.95}px Georgia`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("+", x, y + 1);
+      } else {
+        const cg = ctx.createRadialGradient(x, y, 0, x, y, radius);
+        cg.addColorStop(0, "#6ab0ff"); cg.addColorStop(0.45, color); cg.addColorStop(0.85, "#2a60aa"); cg.addColorStop(1, "#1a3a6a");
+        ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(x, y, radius, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = `bold ${radius * 1.05}px Georgia`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("−", x, y + 1);
+      }
+    }
+
+    function paintStars(ctx, time) {
+      let rng = 77;
+      const r = () => { rng = (rng * 16807) % 2147483647; return rng / 2147483647; };
+      for (let i = 0; i < 180; i++) {
+        const x = r() * W, y = r() * SKY * 0.82, sz = 0.3 + r() * 1.8;
+        const tw = Math.sin(time * 0.004 + i * 2.3) * 0.35 + 0.65;
+        const twinkleStar = Math.pow(Math.sin(time * 0.008 + i * 5), 8); 
+        ctx.fillStyle = `rgba(255,253,220,${Math.min(1, tw * (0.2 + r() * 0.5) + twinkleStar * 0.6)})`;
+        ctx.beginPath(); ctx.arc(x, y, sz + twinkleStar * 0.5, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    function paintMoon(ctx, time) {
+      const mx = 1000, my = 90, mr = 45; 
+      const pulse = Math.sin(time * 0.002) * 2.5;
+      for (let i = 6; i >= 0; i--) {
+        const rr = mr + i * 15 + pulse;
+        const gr = ctx.createRadialGradient(mx, my, mr * 0.2, mx, my, rr);
+        gr.addColorStop(0, `rgba(255,253,220,${0.04 * (6 - i)})`); gr.addColorStop(1, "transparent");
+        ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(mx, my, rr, 0, Math.PI * 2); ctx.fill();
+      }
+      const cg = ctx.createRadialGradient(mx, my, 0, mx, my, mr);
+      cg.addColorStop(0, "#fffef0"); cg.addColorStop(0.5, PAL.yellow); cg.addColorStop(0.8, PAL.orange + "bb"); cg.addColorStop(1, "transparent");
+      ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(mx, my, mr, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = PAL.skyMid + "bb"; ctx.beginPath(); ctx.arc(mx + 15, my - 4, mr * 0.75, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function paintCypress(ctx, x, baseY, heightPx, widthPx, time) {
+      ctx.fillStyle = "#040a04";
+      ctx.beginPath();
+      ctx.moveTo(x - widthPx * 0.25, baseY);
+      ctx.bezierCurveTo(x - widthPx * 0.5, baseY - heightPx * 0.25, x - widthPx * 0.42, baseY - heightPx * 0.65, x - widthPx * 0.12, baseY - heightPx * 0.92);
+      ctx.quadraticCurveTo(x, baseY - heightPx * 1.02, x + widthPx * 0.08, baseY - heightPx * 0.9);
+      ctx.bezierCurveTo(x + widthPx * 0.38, baseY - heightPx * 0.62, x + widthPx * 0.45, baseY - heightPx * 0.22, x + widthPx * 0.22, baseY);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function paintVillage(ctx, time) {
+      const by = SKY;
+      const hills = [
+        [by + 6, "#0c1e14", 18, 0.004, 0],
+        [by + 18, "#0a1810", 12, 0.006, 2],
+        [by + 32, "#081408", 8, 0.008, 4],
+      ];
+      for (const [y, c, a, f, o] of hills) {
+        ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(0, H);
+        for (let x = 0; x <= W; x += 2) ctx.lineTo(x, y + Math.sin(x * f + o) * a + Math.sin(x * 0.011 + o * 2) * 6);
+        ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+      }
+
+      ctx.fillStyle = "#050908"; ctx.fillRect(0, by + 42, W, 140);
+
+      const drawHouse = (hx, hy, w, h, roofH, windows) => {
+        ctx.fillStyle = "#030605";
+        ctx.fillRect(hx, hy - h, w, h);
+        ctx.beginPath();
+        ctx.moveTo(hx - 3, hy - h);
+        ctx.lineTo(hx + w / 2, hy - h - roofH);
+        ctx.lineTo(hx + w + 3, hy - h);
+        ctx.fill();
+        ctx.fillStyle = PAL.windowGlow;
+        windows.forEach(win => {
+          ctx.globalAlpha = 0.6 + Math.sin(time * 0.002 + win.x * 10) * 0.4;
+          ctx.fillRect(hx + win.x, hy - win.y, win.w, win.h);
+        });
+        ctx.globalAlpha = 1.0;
+      };
+
+      ctx.fillStyle = "#030605";
+      ctx.fillRect(400, by + 10, 25, 60);
+      ctx.beginPath(); ctx.moveTo(395, by + 10); ctx.lineTo(412.5, by - 50); ctx.lineTo(430, by + 10); ctx.fill();
+      ctx.fillStyle = PAL.windowGlow; ctx.globalAlpha = 0.8; ctx.fillRect(410, by + 30, 5, 12); ctx.globalAlpha = 1.0;
+
+      drawHouse(180, by + 65, 30, 20, 15, [{x: 8, y: 10, w: 6, h: 6}]);
+      drawHouse(250, by + 60, 35, 25, 15, [{x: 12, y: 12, w: 10, h: 8}]);
+      drawHouse(320, by + 60, 40, 30, 20, [{x: 8, y: 15, w: 6, h: 8}, {x: 24, y: 15, w: 6, h: 8}]);
+      drawHouse(370, by + 62, 28, 22, 12, [{x: 10, y: 12, w: 8, h: 6}]);
+      drawHouse(460, by + 65, 40, 28, 20, [{x: 10, y: 15, w: 6, h: 8}, {x: 24, y: 15, w: 6, h: 8}]);
+      drawHouse(550, by + 60, 45, 25, 15, [{x: 10, y: 15, w: 6, h: 6}, {x: 25, y: 15, w: 6, h: 6}]);
+      drawHouse(680, by + 62, 35, 25, 18, [{x: 12, y: 12, w: 10, h: 8}]);
+      drawHouse(210, by + 85, 50, 35, 22, [{x: 10, y: 18, w: 8, h: 10}, {x: 30, y: 18, w: 8, h: 10}]);
+      drawHouse(280, by + 80, 45, 30, 20, [{x: 15, y: 15, w: 15, h: 10}]);
+      drawHouse(440, by + 85, 55, 40, 25, [{x: 12, y: 22, w: 10, h: 12}, {x: 32, y: 22, w: 10, h: 12}]);
+      drawHouse(510, by + 78, 40, 28, 18, [{x: 15, y: 15, w: 10, h: 8}]);
+      drawHouse(600, by + 88, 50, 35, 25, [{x: 10, y: 20, w: 8, h: 10}, {x: 30, y: 20, w: 8, h: 10}]);
+      drawHouse(660, by + 82, 45, 30, 20, [{x: 15, y: 15, w: 15, h: 10}]);
+      drawHouse(730, by + 75, 40, 25, 15, [{x: 12, y: 12, w: 16, h: 8}]);
+      
+      drawHouse(810, by + 65, 35, 25, 18, [{x: 10, y: 12, w: 8, h: 8}]);
+      drawHouse(880, by + 85, 45, 35, 22, [{x: 12, y: 18, w: 8, h: 10}, {x: 25, y: 18, w: 8, h: 10}]);
+      drawHouse(960, by + 78, 40, 28, 18, [{x: 15, y: 15, w: 10, h: 8}]);
+      drawHouse(1040, by + 88, 50, 35, 25, [{x: 10, y: 20, w: 8, h: 10}, {x: 30, y: 20, w: 8, h: 10}]);
+
+      paintCypress(ctx, 85, by + 52, H * 0.62, 52, time);
+      paintCypress(ctx, 55, by + 56, H * 0.38, 32, time);
+      // O pinheiro da direita (x = 1140) foi removido daqui!
+    }
+
+    function StarryElectricField() {
+      const canvasRef = useRef(null);
+      const [hasStarted, setHasStarted] = useState(false);
+      const [charges, setCharges] = useState(initCharges);
+      const [dragging, setDragging] = useState(null);
+      const [offset, setOffset] = useState({ x: 0, y: 0 });
+      const flRef = useRef([]);
+      const ambRef = useRef([]);
+      const timeRef = useRef(0);
+      const animRef = useRef(null);
+      const cRef = useRef(charges);
+
+      useEffect(() => { cRef.current = charges; }, [charges]);
+
+      const rebuild = useCallback(() => {
+        flRef.current = traceFieldLines(cRef.current);
+        ambRef.current = genAmbient(cRef.current);
+      }, []);
+      
+      useEffect(() => { rebuild(); const iv = setInterval(rebuild, 170); return () => clearInterval(iv); }, [charges, rebuild]);
+
+      useEffect(() => {
+        if (!hasStarted) return; 
+
+        const cvs = canvasRef.current; if (!cvs) return;
+        const ctx = cvs.getContext("2d");
+        const palette = [PAL.s3, PAL.s4, PAL.s5, PAL.s6, PAL.s4, PAL.s5]; 
+
+        const frame = () => {
+          timeRef.current += 16;
+          const t = timeRef.current;
+
+          const bg = ctx.createLinearGradient(0, 0, 0, SKY);
+          bg.addColorStop(0, PAL.skyDeep); bg.addColorStop(0.35, PAL.skyMid);
+          bg.addColorStop(0.75, PAL.skyLight); bg.addColorStop(1, "#1a3050");
+          ctx.fillStyle = bg; ctx.fillRect(0, 0, W, SKY + 30);
+          ctx.fillStyle = "#050908"; ctx.fillRect(0, SKY, W, H - SKY);
+
+          paintStars(ctx, t);
+          paintMoon(ctx, t);
+
+          for (const pts of ambRef.current) {
+            const ph = pts[0].x * 0.03 + pts[0].y * 0.02;
+            paintAmbient(ctx, pts, PAL.s2, 1.2, t, ph);
+          }
+
+          for (let li = 0; li < flRef.current.length; li++) {
+            const { pts } = flRef.current[li];
+            if (pts.length < 5) continue;
+
+            const mid = Math.floor(pts.length * 0.3);
+            const { fx, fy } = eField(pts[mid].x, pts[mid].y, cRef.current);
+            const mag = Math.sqrt(fx * fx + fy * fy);
+            const ci = Math.min(palette.length - 1, Math.floor(mag * 12));
+            const color = palette[ci];
+
+            const phase = li * 1.7 + pts[0].x * 0.012;
+            const shimmer = Math.sin(t * 0.005 + phase) * 0.28 + 0.72;
+            const twinkle = Math.pow(Math.sin(t * 0.015 + phase * 2.5), 4);
+
+            const r = parseInt(color.slice(1, 3), 16), g = parseInt(color.slice(3, 5), 16), b = parseInt(color.slice(5, 7), 16);
+            const fl = Math.sin(t * 0.007 + phase * 1.4) * 22 * shimmer;
+            const cr = Math.min(255, Math.max(0, r + fl + twinkle * 70)) | 0;
+            const cg = Math.min(255, Math.max(0, g + fl * 0.6 + twinkle * 70)) | 0;
+            const cb = Math.min(255, Math.max(0, b + fl * 0.2 + twinkle * 50)) | 0;
+            const arrowColor = `rgb(${cr},${cg},${cb})`;
+            const alphaBase = Math.min(1, (0.4 * shimmer + 0.2) + (twinkle * 0.4));
+
+            const arrowSpacing = 18 + (1 - Math.min(mag * 3, 1)) * 12;
+            const arrowSize = 4.5 + Math.min(mag * 4, 3.5);
+            let accumDist = arrowSpacing * 0.5;
+
+            for (let pi = 1; pi < pts.length; pi++) {
+              const dx = pts[pi].x - pts[pi - 1].x;
+              const dy = pts[pi].y - pts[pi - 1].y;
+              const segLen = Math.sqrt(dx * dx + dy * dy);
+              if (segLen < 0.5) continue;
+
+              accumDist += segLen;
+              if (accumDist >= arrowSpacing) {
+                accumDist -= arrowSpacing;
+                const angle = Math.atan2(dy, dx);
+                
+                const arrowPhase = phase + pi * 0.3;
+                const arrowShimmer = Math.sin(t * 0.006 + arrowPhase) * 0.25 + 0.75;
+                const arrowTwinkle = Math.pow(Math.sin(t * 0.018 + arrowPhase * 1.8), 6);
+                const arrowAlpha = Math.min(1, alphaBase * arrowShimmer + arrowTwinkle * 0.35);
+
+                drawArrow(ctx, pts[pi].x, pts[pi].y, angle, arrowSize, arrowColor, arrowAlpha);
+              }
+            }
+          }
+
+          for (const c of cRef.current) paintChargeGlow(ctx, c, t);
+          paintVillage(ctx, t);
+
+          for (let i = 0; i < cRef.current.length; i++) {
+            const c = cRef.current[i];
+            const force = getForceOnCharge(i, cRef.current);
+            const forceMag = Math.sqrt(force.fx * force.fx + force.fy * force.fy);
+
+            if (forceMag > 0.1) {
+              const drawScale = 1.2; 
+              const maxLen = 120;    
+              let drawFx = force.fx * drawScale;
+              let drawFy = force.fy * drawScale;
+              const currentLen = Math.sqrt(drawFx * drawFx + drawFy * drawFy);
+
+              if (currentLen > maxLen) {
+                drawFx = (drawFx / currentLen) * maxLen;
+                drawFy = (drawFy / currentLen) * maxLen;
+              }
+
+              const r = c.radius + 15; 
+
+              if (currentLen > 5) {
+                const dirX = drawFx / currentLen;
+                const dirY = drawFy / currentLen;
+                
+                const startX = c.x + dirX * r;
+                const startY = c.y + dirY * r;
+                const endX = startX + drawFx;
+                const endY = startY + drawFy;
+
+                const arrowHeadSize = 12;
+                ctx.strokeStyle = PAL.forceResultant;
+                ctx.fillStyle = PAL.forceResultant;
+                ctx.lineWidth = 3.5;
+                
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+
+                const angle = Math.atan2(drawFy, drawFx);
+                ctx.beginPath();
+                ctx.moveTo(endX, endY);
+                ctx.lineTo(endX - arrowHeadSize * Math.cos(angle - Math.PI / 6), endY - arrowHeadSize * Math.sin(angle - Math.PI / 6));
+                ctx.lineTo(endX - arrowHeadSize * Math.cos(angle + Math.PI / 6), endY - arrowHeadSize * Math.sin(angle + Math.PI / 6));
+                ctx.closePath();
+                ctx.fill();
+              }
+            }
+          }
+
+          animRef.current = requestAnimationFrame(frame);
+        };
+        animRef.current = requestAnimationFrame(frame);
+        return () => cancelAnimationFrame(animRef.current);
+      }, [hasStarted]);
+
+      const getPos = (e) => {
+        const rect = canvasRef.current.getBoundingClientRect();
+        const cx = e.touches ? e.touches[0].clientX : e.clientX;
+        const cy = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: (cx - rect.left) * W / rect.width, y: (cy - rect.top) * H / rect.height };
+      };
+
+      const onDown = (e) => {
+        e.preventDefault(); const p = getPos(e);
+        for (let i = charges.length - 1; i >= 0; i--) {
+          if (Math.hypot(p.x - charges[i].x, p.y - charges[i].y) < charges[i].radius + 22) {
+            setDragging(i); setOffset({ x: charges[i].x - p.x, y: charges[i].y - p.y }); return;
+          }
+        }
+      };
+
+      const onMove = (e) => {
+        if (dragging === null) return; e.preventDefault();
+        const p = getPos(e);
+        setCharges(prev => {
+          const n = [...prev];
+          n[dragging] = { ...n[dragging],
+            x: Math.max(20, Math.min(W - 20, p.x + offset.x)),
+            y: Math.max(20, Math.min(SKY - 30, p.y + offset.y)),
+          };
+          return n;
+        });
+      };
+
+      const onUp = () => setDragging(null);
+
+      const toggle = (i) => setCharges(prev => {
+        const n = [...prev]; const c = n[i]; const p = !c.positive;
+        n[i] = { ...c, positive: p, charge: p ? Math.abs(c.charge) : -Math.abs(c.charge), color: p ? PAL.positive : PAL.negative };
+        return n;
+      });
+
+      const onQ = (i, v) => setCharges(prev => {
+        const n = [...prev]; const m = +v;
+        n[i] = { ...n[i], charge: n[i].positive ? m : -m, radius: 12 + m / 45 };
+        return n;
+      });
+
+      const removeCharge = (indexToRemove) => {
+        setCharges(prev => prev.filter((_, i) => i !== indexToRemove));
+      };
+
+      const addCharge = () => {
+        setCharges(prev => {
+          if (prev.length >= 4) return prev; 
+          const usedNames = prev.map(c => c.name);
+          const greekLetters = ["α", "β", "γ", "δ"];
+          let newName = "Nova Carga";
+          for (const letter of greekLetters) {
+            const candidate = `Carga ${letter}`;
+            if (!usedNames.includes(candidate)) { newName = candidate; break; }
+          }
+          return [...prev, {
+            x: W / 2 + (Math.random() * 200 - 100),
+            y: SKY / 2 + (Math.random() * 100 - 50),
+            charge: 500, positive: true, name: newName,
+            color: PAL.positive, radius: 12 + 500 / 45,
+          }];
+        });
+      };
+
+      return (
+        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: "transparent", position: "relative", fontFamily: "'Georgia',serif" }}>
+          
+          {!hasStarted && (
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "rgba(5, 13, 26, 0.75)", backdropFilter: "blur(12px)",
+              zIndex: 50, display: "flex", flexDirection: "column", alignItems: "center", justify: "center",
+              textAlign: "center", padding: "20px"
+            }}>
+              <h1 style={{ fontSize: "clamp(24px, 5vw, 42px)", color: PAL.yellow, textShadow: `0 0 30px ${PAL.yellow}88`, fontStyle: "italic", marginBottom: "15px", marginTop: "10vh" }}>
+                Campo Elétrico <br/> A Noite Eletrostática
+              </h1>
+              <p style={{ fontSize: "16px", maxWidth: "500px", lineHeight: "1.6", marginBottom: "20px", color: "#e0eaf5" }}>
+                Explore as linhas de força num ambiente expansivo.<br/><br/>
+                <em>* Arraste as cargas na tela.<br/>* Observe os vetores de atração e repulsão.<br/>* Utilize o painel inferior para configurar as cargas.</em>
+              </p>
+              <button 
+                onClick={() => setHasStarted(true)}
+                style={{
+                  background: 'rgba(245, 200, 66, 0.15)', border: '1px solid var(--accent-gold)', 
+                  color: PAL.yellow, padding: "12px 35px", fontSize: "16px", fontWeight: "bold",
+                  borderRadius: "30px", cursor: "pointer", letterSpacing: "2px", textTransform: "uppercase",
+                  boxShadow: `0 0 20px ${PAL.yellow}44`, transition: "all 0.3s"
+                }}
+              >
+                Ativar Simulador
+              </button>
+            </div>
+          )}
+
+          <div style={{ flex: 1, minHeight: 0, display: "flex", justifyContent: "center", alignItems: "center", padding: "15px", position: "relative" }}>
+             {/* 🔴 AQUI ESTÁ A CORREÇÃO MÁGICA DOS EVENTOS DO MOUSE/TOUCH 🔴 */}
+             <canvas ref={canvasRef} width={W} height={H} 
+                onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+                onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
+                style={{
+                  maxWidth: "100%", maxHeight: "100%", width: "100%", height: "100%",
+                  borderRadius: "16px", objectFit: "contain",
+                  cursor: dragging !== null ? "grabbing" : "grab",
+                  boxShadow: "0 15px 50px rgba(0,0,0,0.8), 0 0 0 1px rgba(74,144,204,0.2)"
+             }} />
+          </div>
+
+          <div style={{
+             flexShrink: 0,
+             background: "rgba(10, 22, 45, 0.6)", backdropFilter: "blur(15px)",
+             borderTop: "1px solid rgba(74, 144, 204, 0.3)",
+             padding: "15px 25px", display: "flex", gap: "20px", alignItems: "center",
+             overflowX: "auto",
+             boxShadow: "0 -10px 30px rgba(0,0,0,0.5)",
+             zIndex: 10
+          }}>
+             
+             <div style={{ display: "flex", gap: "15px", flex: 1 }}>
+               {charges.map((c, i) => (
+                 <div key={i} style={{
+                   background: "rgba(20, 35, 65, 0.5)",
+                   border: "1px solid rgba(74, 144, 204, 0.2)",
+                   borderRadius: "12px", padding: "10px 16px",
+                   display: "flex", alignItems: "center", gap: "15px",
+                   minWidth: "max-content",
+                   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)"
+                 }}>
+                   
+                   <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                     <div style={{
+                       width: 32, height: 32, borderRadius: "50%",
+                       background: c.positive ? `radial-gradient(circle, #fffef0, ${c.color})` : `radial-gradient(circle, #6ab0ff, ${c.color})`,
+                       display: "flex", alignItems: "center", justifyContent: "center",
+                       color: c.positive ? "#332800" : "#fff", fontWeight: "bold", fontSize: "18px",
+                       boxShadow: `0 0 12px ${c.color}66`
+                     }}>
+                       {c.positive ? "+" : "−"}
+                     </div>
+                     <span style={{ color: PAL.yellow, fontWeight: "bold", fontSize: "14px", fontStyle: "italic", minWidth: "50px" }}>{c.name}</span>
+                   </div>
+
+                   <div style={{ width: 1, height: 24, background: "rgba(74, 144, 204, 0.2)" }} />
+
+                   <button onClick={() => toggle(i)} style={{
+                     background: c.positive ? "rgba(240, 216, 72, 0.1)" : "rgba(74, 144, 238, 0.1)",
+                     border: `1px solid ${c.positive ? "rgba(240, 216, 72, 0.3)" : "rgba(74, 144, 238, 0.3)"}`,
+                     color: c.positive ? PAL.positive : PAL.negative,
+                     padding: "6px 12px", borderRadius: "20px", cursor: "pointer",
+                     display: "flex", alignItems: "center", gap: "6px", fontSize: "11px", fontWeight: "bold",
+                     textTransform: "uppercase", letterSpacing: "1px", transition: "all 0.2s"
+                   }}>
+                     <span style={{ fontSize: "14px", marginTop: "-2px" }}>{c.positive ? "＋" : "−"}</span>
+                     {c.positive ? "Positiva" : "Negativa"}
+                   </button>
+
+                   <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                     <span style={{ fontSize: "10px", color: "#8a9ab5", letterSpacing: "1px" }}>|Q|</span>
+                     <input type="range" min={100} max={1200} value={Math.abs(c.charge)} onChange={e => onQ(i, e.target.value)} style={{ accentColor: c.color, width: 80, cursor: "pointer" }} />
+                     <span style={{ fontSize: "13px", fontWeight: "bold", color: c.color, minWidth: 32, fontFamily: "monospace" }}>{Math.abs(c.charge)}</span>
+                   </div>
+
+                   <button onClick={() => removeCharge(i)} style={{
+                     background: "rgba(255, 80, 80, 0.15)", border: "1px solid rgba(255, 80, 80, 0.3)", 
+                     color: "#ff8888", width: 26, height: 26, borderRadius: "50%", cursor: "pointer", 
+                     display: "flex", alignItems: "center", justifyContent: "center", marginLeft: "5px",
+                     transition: "background 0.2s"
+                   }} title="Remover carga">✕</button>
+                 </div>
+               ))}
+             </div>
+
+             <div style={{ display: "flex", gap: "10px", paddingLeft: "20px", borderLeft: "1px solid rgba(74, 144, 204, 0.2)" }}>
+               {charges.length < 4 && (
+                 <button onClick={addCharge} style={{
+                    background: "rgba(245, 200, 66, 0.1)", border: "1px solid rgba(245, 200, 66, 0.3)",
+                    color: PAL.yellow, padding: "10px 20px", borderRadius: "10px", cursor: "pointer",
+                    fontSize: "12px", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase", transition: "all 0.2s"
+                 }}>＋ Adicionar</button>
+               )}
+               <button onClick={() => setCharges(initCharges())} style={{
+                    background: "rgba(74, 144, 204, 0.1)", border: "1px solid rgba(74, 144, 204, 0.3)",
+                    color: "#a0d4ff", padding: "10px 20px", borderRadius: "10px", cursor: "pointer",
+                    fontSize: "12px", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase", transition: "all 0.2s"
+               }}>↺ Reiniciar</button>
+             </div>
+
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<StarryElectricField />);
+</script>
+
+<script type="text/plain" id="puzzle-code">
+const GRID = 3;
+const TOTAL = GRID * GRID;
+
+// Variáveis dinâmicas de tamanho
+let TILE_SIZE = 100;
+let GRID_PX = 300;
+
+const LEVELS = [
+  { id: 1, title: "Uma Estrela", subtitle: "Campo de 1 carga pontual" },
+  { id: 2, title: "Dualidade", subtitle: "Dipolo elétrico — 2 cargas" },
+  { id: 3, title: "Constelação", subtitle: "Superposição — 3 cargas" },
+];
+
+const PHYSICS = [
+  'O campo elétrico de uma carga pontual positiva (<span class="yellow">+</span>) irradia para fora como raios de uma estrela. A intensidade diminui com o quadrado da distância: <code>E = kQ/r²</code>',
+  'O dipolo elétrico une cargas <span class="yellow">+</span> e <span class="blue">−</span> como o dia e a noite. As linhas de campo fluem da positiva à negativa, criando espirais que lembram os redemoinhos de Van Gogh.',
+  'Três cargas criam uma constelação de forças. O princípio da superposição diz que o campo total é a soma vetorial: <code>E⃗ = E⃗₁ + E⃗₂ + E⃗₃</code> — cada carga pinta sua parte do céu.',
+];
+
+let state = {
+  currentLevel: null,
+  tiles: [],
+  selected: null,
+  moves: 0,
+  solved: false,
+  imageUrl: null,
+  completedLevels: {},
+  animating: false,
+  showRef: false,
+  timer: 0,
+  timerInterval: null,
 };
 
-let currentModule = null;
+(function initStars() {
+  const c = document.getElementById('pz-starCanvas');
+  const ctx = c.getContext('2d');
+  let w, h, stars;
+  function resize() {
+    w = c.width = window.innerWidth;
+    h = c.height = window.innerHeight;
+    stars = Array.from({ length: 70 }, () => ({
+      x: Math.random() * w, y: Math.random() * h,
+      r: 0.5 + Math.random() * 2,
+      speed: 0.002 + Math.random() * 0.004,
+      phase: Math.random() * Math.PI * 2,
+    }));
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  function draw(t) {
+    ctx.clearRect(0, 0, w, h);
+    for (const s of stars) {
+      const alpha = 0.3 + 0.7 * Math.abs(Math.sin(t * s.speed + s.phase));
+      const glow = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3);
+      glow.addColorStop(0, 'rgba(245,200,66,' + (alpha * 0.5) + ')');
+      glow.addColorStop(1, 'transparent');
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r * 3, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r * 0.6, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,250,220,' + alpha + ')';
+      ctx.fill();
+    }
+    requestAnimationFrame(draw);
+  }
+  requestAnimationFrame(draw);
+})();
 
-function setActiveBtn(id) {
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  if (id) document.getElementById(id).classList.add('active');
-}
+function renderFieldCanvas(level) {
+  const size = GRID_PX;
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
 
-function showHome() {
-  currentModule = null;
-  document.getElementById('welcome').style.display = 'flex';
-  document.getElementById('topbar').classList.remove('active');
-  document.querySelectorAll('.iframe-container').forEach(f => f.classList.remove('active'));
-  // Clear iframe src to free resources
-  document.getElementById('iframe-sim').src = '';
-  document.getElementById('iframe-puzzle').src = '';
-  setActiveBtn('btn-home');
-}
+  const bgGrad = ctx.createLinearGradient(0, 0, size, size);
+  bgGrad.addColorStop(0, '#0b1e3d');
+  bgGrad.addColorStop(0.3, '#142850');
+  bgGrad.addColorStop(0.6, '#1a3a6b');
+  bgGrad.addColorStop(1, '#0e2248');
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, size, size);
 
-function loadModule(key) {
-  if (currentModule === key) return;
-  currentModule = key;
-  const mod = modules[key];
+  const rng = (seed) => { let s = seed; return () => { s = (s * 16807) % 2147483647; return s / 2147483647; }; };
+  const rand = rng(level * 42 + 7);
 
-  // Hide everything first
-  document.getElementById('welcome').style.display = 'none';
-  document.querySelectorAll('.iframe-container').forEach(f => f.classList.remove('active'));
+  const factor = size / 300; 
 
-  // Clear non-active iframes
-  for (const k of Object.keys(modules)) {
-    if (k !== key) {
-      document.getElementById(`iframe-${k}`).src = '';
+  for (let i = 0; i < 200 * factor; i++) {
+    const x = rand() * size, y = rand() * size;
+    const len = (8 + rand() * 25) * factor;
+    const angle = Math.sin(x * 0.02 + y * 0.015) * Math.PI + rand() * 0.5;
+    const hue = 200 + rand() * 40, light = 20 + rand() * 25;
+    ctx.beginPath(); ctx.moveTo(x, y);
+    ctx.lineTo(x + Math.cos(angle) * len, y + Math.sin(angle) * len);
+    ctx.strokeStyle = 'hsla(' + hue + ', 60%, ' + light + '%, 0.4)';
+    ctx.lineWidth = (2 + rand() * 4) * factor; ctx.lineCap = 'round'; ctx.stroke();
+  }
+
+  for (let i = 0; i < 30 * factor; i++) {
+    const sx = rand() * size, sy = rand() * size, sr = (1 + rand() * 3) * factor;
+    const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, sr * 4);
+    glow.addColorStop(0, 'rgba(245,200,66,' + (0.3 + rand() * 0.5) + ')');
+    glow.addColorStop(0.5, 'rgba(232,160,32,' + (0.1 + rand() * 0.15) + ')');
+    glow.addColorStop(1, 'transparent');
+    ctx.beginPath(); ctx.arc(sx, sy, sr * 4, 0, Math.PI * 2); ctx.fillStyle = glow; ctx.fill();
+    ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,250,210,' + (0.6 + rand() * 0.4) + ')'; ctx.fill();
+  }
+
+  const charges = [];
+  if (level === 1) { charges.push({ x: size / 2, y: size / 2, q: 1 }); }
+  else if (level === 2) { charges.push({ x: size * 0.3, y: size / 2, q: 1 }); charges.push({ x: size * 0.7, y: size / 2, q: -1 }); }
+  else { charges.push({ x: size / 2, y: size * 0.28, q: 1 }); charges.push({ x: size * 0.28, y: size * 0.72, q: -1 }); charges.push({ x: size * 0.72, y: size * 0.72, q: 1 }); }
+
+  for (let py = 0; py < size; py += 3 * factor) {
+    for (let px = 0; px < size; px += 3 * factor) {
+      let Ex = 0, Ey = 0;
+      for (const c of charges) {
+        const dx = px - c.x, dy = py - c.y;
+        const r2 = dx * dx + dy * dy + (100 * factor * factor), r = Math.sqrt(r2);
+        const E = (c.q * 5000 * factor * factor) / r2;
+        Ex += E * dx / r; Ey += E * dy / r;
+      }
+      const mag = Math.sqrt(Ex * Ex + Ey * Ey);
+      const intensity = Math.min(1, mag / 3);
+      if (intensity > 0.05) {
+        const brushSize = (2 + intensity * 4 + (rand() - 0.5) * 2) * factor;
+        const angle = Math.atan2(Ey, Ex);
+        const hue = intensity > 0.5 ? 45 + (1 - intensity) * 30 : 200 + intensity * 40;
+        const sat = 50 + intensity * 40, lig = 25 + intensity * 50;
+        ctx.save(); ctx.translate(px, py); ctx.rotate(angle + (rand() - 0.5) * 0.6);
+        ctx.beginPath(); ctx.ellipse(0, 0, brushSize * 1.8, brushSize * 0.7, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'hsla(' + hue + ',' + sat + '%,' + lig + '%,' + (0.3 + intensity * 0.5) + ')';
+        ctx.fill(); ctx.restore();
+      }
     }
   }
 
-  // Show topbar
-  const topbar = document.getElementById('topbar');
-  topbar.classList.add('active');
-  document.getElementById('topbar-title').textContent = mod.title;
-
-  // Show and load iframe
-  const container = document.getElementById(`frame-${key}`);
-  container.classList.add('active');
-  const iframe = document.getElementById(`iframe-${key}`);
-  if (!iframe.src || iframe.src === '' || iframe.src === 'about:blank') {
-    iframe.src = mod.file;
+  for (const c of charges) {
+    for (let i = 0; i < 14; i++) {
+      const angle = (2 * Math.PI * i) / 14;
+      const dir = c.q > 0 ? 1 : -1;
+      const points = [];
+      let lx = c.x + Math.cos(angle) * 14 * factor, ly = c.y + Math.sin(angle) * 14 * factor;
+      points.push({ x: lx, y: ly });
+      for (let step = 0; step < 250; step++) {
+        let fEx = 0, fEy = 0;
+        for (const ch of charges) {
+          const ddx = lx - ch.x, ddy = ly - ch.y;
+          const r2 = ddx * ddx + ddy * ddy + (50 * factor * factor), r = Math.sqrt(r2);
+          const E = (ch.q * 2000 * factor * factor) / r2;
+          fEx += E * ddx / r; fEy += E * ddy / r;
+        }
+        const fMag = Math.sqrt(fEx * fEx + fEy * fEy) + 0.001;
+        lx += dir * (fEx / fMag) * 3 * factor; ly += dir * (fEy / fMag) * 3 * factor;
+        if (lx < -10 || lx > size + 10 || ly < -10 || ly > size + 10) break;
+        let tooClose = false;
+        for (const ch of charges) {
+          if (ch === c) continue;
+          if (Math.sqrt((lx - ch.x) ** 2 + (ly - ch.y) ** 2) < 14 * factor) { tooClose = true; break; }
+        }
+        points.push({ x: lx, y: ly });
+        if (tooClose) break;
+      }
+      if (points.length > 5) {
+        for (let pass = 0; pass < 3; pass++) {
+          ctx.beginPath();
+          ctx.moveTo(points[0].x + (rand() - 0.5) * 3, points[0].y + (rand() - 0.5) * 3);
+          for (let p = 1; p < points.length; p++) {
+            ctx.lineTo(points[p].x + (rand() - 0.5) * (2 + pass), points[p].y + (rand() - 0.5) * (2 + pass));
+          }
+          const lineHue = c.q > 0 ? 40 + rand() * 20 : 210 + rand() * 30;
+          ctx.strokeStyle = 'hsla(' + lineHue + ',70%,' + (50 + rand() * 20) + '%,' + (0.15 + rand() * 0.2) + ')';
+          ctx.lineWidth = (2 + rand() * 3) * factor; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke();
+        }
+      }
+    }
   }
 
-  setActiveBtn(`btn-${key}`);
+  for (const c of charges) {
+    for (let r = 30 * factor; r > 5 * factor; r -= 3 * factor) {
+      ctx.beginPath(); ctx.arc(c.x, c.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = c.q > 0 ? 'rgba(245,200,66,' + (0.04 + (30 * factor - r) * 0.008) + ')' : 'rgba(60,120,220,' + (0.04 + (30 * factor - r) * 0.008) + ')';
+      ctx.fill();
+    }
+    for (let s = 0; s < 20; s++) {
+      const a = rand() * Math.PI * 2, dist = (10 + rand() * 20) * factor;
+      const sx = c.x + Math.cos(a) * dist, sy = c.y + Math.sin(a) * dist;
+      ctx.save(); ctx.translate(sx, sy); ctx.rotate(a + Math.PI / 2);
+      ctx.beginPath(); ctx.ellipse(0, 0, (6 + rand() * 6) * factor, (2 + rand() * 2) * factor, 0, 0, Math.PI * 2);
+      ctx.fillStyle = c.q > 0
+        ? 'hsla(' + (40 + rand() * 20) + ',80%,' + (55 + rand() * 25) + '%,' + (0.3 + rand() * 0.4) + ')'
+        : 'hsla(' + (200 + rand() * 30) + ',70%,' + (40 + rand() * 25) + '%,' + (0.3 + rand() * 0.4) + ')';
+      ctx.fill(); ctx.restore();
+    }
+    const coreGrad = ctx.createRadialGradient(c.x - 2, c.y - 2, 0, c.x, c.y, 14 * factor);
+    if (c.q > 0) { coreGrad.addColorStop(0, '#fffde0'); coreGrad.addColorStop(0.4, '#f5c842'); coreGrad.addColorStop(1, '#d4792a'); }
+    else { coreGrad.addColorStop(0, '#b0d0ff'); coreGrad.addColorStop(0.4, '#4a90d9'); coreGrad.addColorStop(1, '#1a3a6b'); }
+    ctx.beginPath(); ctx.arc(c.x, c.y, 14 * factor, 0, Math.PI * 2); ctx.fillStyle = coreGrad; ctx.fill();
+    ctx.fillStyle = c.q > 0 ? '#5a3000' : '#c8dfff';
+    ctx.font = `bold ${16 * factor}px serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(c.q > 0 ? '+' : '−', c.x, c.y + (1 * factor));
+  }
+
+  ctx.strokeStyle = 'rgba(200,190,160,0.06)'; ctx.lineWidth = 1;
+  for (let i = 1; i < GRID; i++) {
+    ctx.beginPath(); ctx.moveTo(i * TILE_SIZE, 0); ctx.lineTo(i * TILE_SIZE, size); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, i * TILE_SIZE); ctx.lineTo(size, i * TILE_SIZE); ctx.stroke();
+  }
+
+  return canvas.toDataURL();
 }
 
-// Start on home
-showHome();
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  if (a.every((v, i) => v === i)) { [a[0], a[a.length - 1]] = [a[a.length - 1], a[0]]; }
+  return a;
+}
+
+function formatTime(s) {
+  return Math.floor(s / 60) + ':' + (s % 60).toString().padStart(2, '0');
+}
+
+function buildMenu() {
+  const list = document.getElementById('pz-levelList');
+  list.innerHTML = '';
+  LEVELS.forEach(lv => {
+    const best = state.completedLevels[lv.id];
+    const btn = document.createElement('button');
+    btn.className = 'level-btn' + (best ? ' completed' : '');
+    btn.innerHTML =
+      '<div class="level-icon">' + (best ? '✦' : lv.id) + '</div>' +
+      '<div style="flex:1">' +
+        '<div class="level-title">' + lv.title + '</div>' +
+        '<div class="level-sub">' + lv.subtitle + '</div>' +
+        (best ? '<div class="level-best">★ Melhor: ' + formatTime(best.time) + ' · ' + best.moves + ' mov.</div>' : '') +
+      '</div>' +
+      '<div class="level-arrow">›</div>';
+    btn.onclick = () => startLevel(lv.id);
+    list.appendChild(btn);
+  });
+}
+
+function startLevel(level) {
+  const isMobile = window.innerWidth <= 800;
+  const sidebarW = isMobile ? 80 : 300;
+  const availableW = window.innerWidth - sidebarW - 40; 
+  const availableH = window.innerHeight - (isMobile ? 220 : 250); 
+  const bestSize = Math.max(240, Math.min(availableW, availableH, 600)); 
+  
+  TILE_SIZE = Math.floor(bestSize / GRID);
+  GRID_PX = TILE_SIZE * GRID;
+
+  state.currentLevel = level;
+  state.imageUrl = renderFieldCanvas(level);
+  state.tiles = shuffle(Array.from({ length: TOTAL }, (_, i) => i));
+  state.selected = null;
+  state.moves = 0;
+  state.solved = false;
+  state.animating = false;
+  state.showRef = false;
+  state.timer = 0;
+
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(() => {
+    state.timer++;
+    updateTimerDisplay();
+  }, 1000);
+
+  document.getElementById('pz-menuPage').style.display = 'none';
+  document.getElementById('pz-gamePage').style.display = 'flex';
+
+  const lv = LEVELS[level - 1];
+  document.getElementById('pz-gameTitle').textContent = lv.title;
+  document.getElementById('pz-gameSub').textContent = lv.subtitle;
+  document.getElementById('pz-physicsText').innerHTML = PHYSICS[level - 1];
+  document.getElementById('pz-solvedMsg').style.display = 'none';
+  
+  document.getElementById('pz-btnHint').className = 'btn-sm';
+  document.getElementById('pz-btnHint').textContent = 'Dica 🌙';
+  document.getElementById('pz-refImg').className = 'ref-img';
+
+  const refEl = document.getElementById('pz-refImgEl');
+  const refSize = Math.min(GRID_PX * 0.45, 180);
+  refEl.src = state.imageUrl;
+  refEl.style.width = refSize + 'px';
+  refEl.style.height = refSize + 'px';
+
+  const wrap = document.getElementById('pz-puzzleWrap');
+  wrap.style.width = GRID_PX + 'px';
+  wrap.style.height = GRID_PX + 'px';
+  wrap.className = 'puzzle-wrap';
+
+  if (level < 3) {
+    document.getElementById('pz-btnNext').style.display = '';
+    document.getElementById('pz-btnNext').onclick = () => startLevel(level + 1);
+  } else {
+    document.getElementById('pz-btnNext').style.display = 'none';
+  }
+  document.getElementById('pz-btnReplay').onclick = () => startLevel(level);
+
+  renderTiles();
+  updateStats();
+}
+
+function renderTiles() {
+  const grid = document.getElementById('pz-puzzleGrid');
+  grid.innerHTML = '';
+  state.tiles.forEach((tileIndex, position) => {
+    const tileRow = Math.floor(tileIndex / GRID);
+    const tileCol = tileIndex % GRID;
+    const posRow = Math.floor(position / GRID);
+    const posCol = position % GRID;
+    const isCorrect = tileIndex === position;
+
+    const div = document.createElement('div');
+    div.className = 'tile';
+    div.dataset.pos = position;
+    div.style.left = (posCol * TILE_SIZE) + 'px';
+    div.style.top = (posRow * TILE_SIZE) + 'px';
+    div.style.width = TILE_SIZE + 'px';
+    div.style.height = TILE_SIZE + 'px';
+    div.style.backgroundImage = 'url(' + state.imageUrl + ')';
+    div.style.backgroundPosition = '-' + (tileCol * TILE_SIZE) + 'px -' + (tileRow * TILE_SIZE) + 'px';
+    div.style.backgroundSize = GRID_PX + 'px ' + GRID_PX + 'px';
+
+    div.innerHTML =
+      '<div class="tile-border"></div>' +
+      '<div class="tile-num' + (isCorrect && !state.solved ? ' correct' : '') + '">' + (tileIndex + 1) + '</div>';
+
+    div.onclick = () => handleTileClick(position);
+    grid.appendChild(div);
+  });
+  highlightSelected();
+}
+
+function highlightSelected() {
+  document.querySelectorAll('#puzzle-view .tile').forEach(t => {
+    const pos = parseInt(t.dataset.pos);
+    if (pos === state.selected) {
+      t.classList.add('selected');
+      if (!t.querySelector('.tile-glow')) {
+        const g = document.createElement('div');
+        g.className = 'tile-glow';
+        t.appendChild(g);
+      }
+    } else {
+      t.classList.remove('selected');
+      const g = t.querySelector('.tile-glow');
+      if (g) g.remove();
+    }
+  });
+}
+
+function handleTileClick(index) {
+  if (state.solved || state.animating) return;
+  if (state.selected === null) {
+    state.selected = index;
+    highlightSelected();
+  } else if (state.selected === index) {
+    state.selected = null;
+    highlightSelected();
+  } else {
+    const from = state.selected;
+    const to = index;
+    state.animating = true;
+
+    const tiles = document.querySelectorAll('#puzzle-view .tile');
+    let fromEl, toEl;
+    tiles.forEach(t => {
+      const p = parseInt(t.dataset.pos);
+      if (p === from) fromEl = t;
+      if (p === to) toEl = t;
+    });
+
+    const fromRow = Math.floor(from / GRID), fromCol = from % GRID;
+    const toRow = Math.floor(to / GRID), toCol = to % GRID;
+
+    fromEl.classList.add('animating');
+    toEl.classList.add('animating');
+    fromEl.style.transform = 'translate(' + ((toCol - fromCol) * TILE_SIZE) + 'px,' + ((toRow - fromRow) * TILE_SIZE) + 'px)';
+    toEl.style.transform = 'translate(' + ((fromCol - toCol) * TILE_SIZE) + 'px,' + ((fromRow - toRow) * TILE_SIZE) + 'px)';
+
+    setTimeout(() => {
+      [state.tiles[from], state.tiles[to]] = [state.tiles[to], state.tiles[from]];
+      state.moves++;
+      state.selected = null;
+      state.animating = false;
+      renderTiles();
+      updateStats();
+      checkSolved();
+    }, 280);
+  }
+}
+
+function updateStats() {
+  document.getElementById('pz-movesDisplay').textContent = state.moves;
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const el = document.getElementById('pz-timerDisplay');
+  el.textContent = formatTime(state.timer);
+  el.style.color = state.timer > 180 ? '#d4792a' : state.timer > 120 ? '#e8a020' : '#f0e6d0';
+}
+
+function checkSolved() {
+  if (state.tiles.every((v, i) => v === i) && state.moves > 0) {
+    state.solved = true;
+    if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+
+    document.getElementById('pz-puzzleWrap').classList.add('solved');
+    document.getElementById('pz-solvedMsg').style.display = 'block';
+
+    const best = state.completedLevels[state.currentLevel];
+    const isRecord = !best || state.timer < best.time || (state.timer === best.time && state.moves < best.moves);
+    if (isRecord) {
+      state.completedLevels[state.currentLevel] = { time: state.timer, moves: state.moves };
+    }
+
+    document.querySelectorAll('#puzzle-view .tile').forEach(t => t.style.cursor = 'default');
+  }
+}
+
+document.getElementById('pz-btnMenu').onclick = () => {
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  state.currentLevel = null;
+  document.getElementById('pz-gamePage').style.display = 'none';
+  document.getElementById('pz-menuPage').style.display = 'flex';
+  buildMenu();
+};
+
+document.getElementById('pz-btnHint').onclick = () => {
+  state.showRef = !state.showRef;
+  const btn = document.getElementById('pz-btnHint');
+  const ref = document.getElementById('pz-refImg');
+  if (state.showRef) {
+    btn.className = 'btn-sm active';
+    btn.textContent = 'Ocultar';
+    ref.className = 'ref-img show';
+  } else {
+    btn.className = 'btn-sm';
+    btn.textContent = 'Dica 🌙';
+    ref.className = 'ref-img';
+  }
+};
+
+buildMenu();
 </script>
 
 </body>
