@@ -583,6 +583,19 @@ let syncCount = 0;
 let beatFrame = 0;
 const BEAT_INTERVAL = 90;  // ~1.5s at 60fps — rhythm for launch + impact sounds
 
+// Projectile heads — one per angle, respawn on landing
+const heads = [
+  { x: START_X, y: START_Y, vx: 0, vy: 0, color: '#00ffcc', glow: '#00ffcc', active: false },
+  { x: START_X, y: START_Y, vx: 0, vy: 0, color: '#ff44ff', glow: '#ff44ff', active: false },
+];
+function spawnHead(h, angleDeg) {
+  const rad = angleDeg * Math.PI / 180;
+  h.x = START_X; h.y = START_Y;
+  h.vx = V0 * Math.cos(rad);
+  h.vy = -V0 * Math.sin(rad);
+  h.active = true;
+}
+
 // ══════════════════════════════════════════════════════
 //  DRAW HELPERS
 // ══════════════════════════════════════════════════════
@@ -748,6 +761,49 @@ function drawTarget(tx, t) {
   ctx.restore();
 }
 
+function drawGhostParabola(angleDeg, color, alpha) {
+  const rad = angleDeg * Math.PI / 180;
+  let vx = V0 * Math.cos(rad);
+  let vy = -V0 * Math.sin(rad);
+  let x = START_X, y = START_Y;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  while (true) {
+    vy += G; x += vx; y += vy;
+    if (y >= START_Y) { ctx.lineTo(x, START_Y); break; }
+    ctx.lineTo(x, y);
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 7]);
+  ctx.globalAlpha = alpha;
+  ctx.shadowBlur = 5; ctx.shadowColor = color;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1; ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawHeads() {
+  heads.forEach(h => {
+    if (!h.active) return;
+    ctx.save();
+    const grad = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, 9);
+    grad.addColorStop(0,   '#ffffff');
+    grad.addColorStop(0.35, h.color);
+    grad.addColorStop(1,   'transparent');
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, 7, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.shadowBlur = 24; ctx.shadowColor = h.glow;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  });
+}
+
 function spawnImpact(tx, big = false) {
   const count = big ? 80 : 28;
   const colors = big
@@ -818,6 +874,10 @@ function animate() {
   uiComp.textContent = thetaComp.toFixed(1) + '°';
   uiRange.textContent = (rangePixels / 10).toFixed(2) + ' m';
 
+  // ─── GHOST PARABOLAS (draw before trails so trails sit on top) ───
+  drawGhostParabola(theta,     '#00ffcc', 0.13);
+  drawGhostParabola(thetaComp, '#ff44ff', 0.13);
+
   // ─── VISUAL ELEMENTS ───
   drawAngleArcs(theta, thetaComp);
   drawTarget(targetX, timeEngine);
@@ -826,6 +886,15 @@ function animate() {
   // ─── EMIT TRAIL PARTICLES ───
   trails.push(new TrailParticle(theta,     '#00ffcc', '#00ffcc'));
   trails.push(new TrailParticle(thetaComp, '#ff44ff', '#ff44ff'));
+
+  // ─── UPDATE PROJECTILE HEADS ───
+  if (!heads[0].active) spawnHead(heads[0], theta);
+  if (!heads[1].active) spawnHead(heads[1], thetaComp);
+  heads.forEach(h => {
+    if (!h.active) return;
+    h.vy += G; h.x += h.vx; h.y += h.vy;
+    if (h.y >= START_Y) { h.y = START_Y; h.active = false; }
+  });
 
   // ─── SOUND BEATS (periodic launch + impact rhythm) ───
   beatFrame++;
@@ -862,6 +931,9 @@ function animate() {
     sparks[i].draw();
     if (sparks[i].life <= 0) sparks.splice(i, 1);
   }
+
+  // ─── DRAW PROJECTILE HEADS (on top of everything) ───
+  drawHeads();
 
   frameNo++;
 }
