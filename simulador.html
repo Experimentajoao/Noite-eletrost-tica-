@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulador — Ângulos Complementares</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+    #sim-container {
+      position: relative;
+      width: 450px;
+      height: 800px;
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(0,255,200,0.15),
+        0 0 60px rgba(0,255,200,0.25),
+        0 0 120px rgba(180,0,255,0.15);
+    }
+
+    canvas { display: block; width: 100%; height: 100%; }
+
+    /* Scanline CRT overlay */
+    #scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(0,0,0,0.13) 3px,
+        rgba(0,0,0,0.13) 4px
+      );
+      pointer-events: none;
+      z-index: 5;
+      border-radius: 18px;
+    }
+
+    /* White flash for sync */
+    #flash {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, rgba(200,255,240,1) 0%, rgba(255,255,255,0.6) 60%, transparent 100%);
+      opacity: 0;
+      pointer-events: none;
+      z-index: 20;
+      transition: opacity 0.08s ease-out;
+      border-radius: 18px;
+    }
+
+    /* SYNC popup */
+    #sync-popup {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      z-index: 30;
+      text-align: center;
+      pointer-events: none;
+      width: 90%;
+    }
+    #sync-popup.show {
+      animation: popIn 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+    @keyframes popIn {
+      0%   { transform: translate(-50%,-50%) scale(0); opacity:1; }
+      15%  { transform: translate(-50%,-50%) scale(1.05); opacity:1; }
+      20%  { transform: translate(-50%,-50%) scale(1); opacity:1; }
+      75%  { transform: translate(-50%,-50%) scale(1); opacity:1; }
+      100% { transform: translate(-50%,-50%) scale(0.8); opacity:0; }
+    }
+
+    .sync-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow:
+        0 0 10px #00ffcc,
+        0 0 30px #00ffcc,
+        0 0 60px #ff00ff,
+        0 0 100px rgba(0,255,200,0.5);
+      letter-spacing: 3px;
+      line-height: 1.3;
+    }
+    .sync-formula {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 13px;
+      color: rgba(0,255,200,0.9);
+      letter-spacing: 2px;
+      margin-top: 8px;
+      text-shadow: 0 0 12px #00ffcc;
+    }
+    .sync-subtitle {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 11px;
+      color: rgba(255,180,255,0.8);
+      letter-spacing: 5px;
+      margin-top: 6px;
+      text-shadow: 0 0 10px #ff00ff;
+    }
+
+    /* ─── HUD PANEL ─── */
+    #panel {
+      position: absolute;
+      bottom: 22px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      background: rgba(4, 4, 14, 0.82);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(0,255,200,0.18);
+      border-top: 2px solid rgba(0,255,200,0.7);
+      border-radius: 14px;
+      padding: 16px 18px 18px;
+      z-index: 10;
+    }
+
+    /* Corner brackets */
+    #panel::before, #panel::after {
+      content: '';
+      position: absolute;
+      width: 14px; height: 14px;
+      border-color: rgba(0,255,200,0.7);
+      border-style: solid;
+    }
+    #panel::before { top: -2px; left: -1px; border-width: 2px 0 0 2px; border-radius: 3px 0 0 0; }
+    #panel::after  { top: -2px; right: -1px; border-width: 2px 2px 0 0; border-radius: 0 3px 0 0; }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 9px;
+      color: #445566;
+      margin-bottom: 14px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+    }
+    .live-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #00ffcc;
+      box-shadow: 0 0 8px #00ffcc, 0 0 16px rgba(0,255,200,0.4);
+      margin-right: 6px;
+      animation: livePulse 1.4s infinite;
+    }
+    @keyframes livePulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: 0.5; }
+    }
+
+    /* Slider */
+    .slider-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 8px;
+      color: #334455;
+      letter-spacing: 1px;
+      margin-bottom: 7px;
+    }
+    .slider-track {
+      position: relative;
+      width: 100%;
+      height: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 2px;
+      margin-bottom: 18px;
+    }
+    .slider-fill {
+      position: absolute;
+      top: 0; left: 0; height: 100%;
+      background: linear-gradient(90deg, #00ffcc 0%, #aa00ff 50%, #ff00ff 100%);
+      border-radius: 2px;
+      box-shadow: 0 0 10px rgba(0,255,200,0.5);
+    }
+    .slider-thumb {
+      position: absolute;
+      top: -8px;
+      width: 20px; height: 20px;
+      background: #fff;
+      border-radius: 50%;
+      transform: translateX(-50%);
+      box-shadow:
+        0 0 0 3px rgba(0,255,200,0.3),
+        0 0 20px rgba(255,255,255,0.9),
+        0 0 8px rgba(0,255,200,0.8);
+    }
+
+    /* Values grid */
+    .values-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+    }
+    .val-box {
+      text-align: center;
+      padding: 10px 4px 8px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 8px;
+    }
+    .val-label {
+      display: block;
+      font-size: 8px;
+      color: #445566;
+      margin-bottom: 5px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+    .val-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      display: block;
+    }
+    .c-cyan    { color: #00ffcc; text-shadow: 0 0 12px rgba(0,255,200,0.8); }
+    .c-magenta { color: #ff44ff; text-shadow: 0 0 12px rgba(255,0,255,0.8); }
+    .c-white   { color: #ffffff; text-shadow: 0 0 10px rgba(255,255,255,0.6); }
+
+    /* Sync counter row */
+    .counter-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 12px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255,255,255,0.05);
+      font-size: 8px;
+      color: #334455;
+      letter-spacing: 2px;
+    }
+    .counter-val {
+      font-family: 'Orbitron', sans-serif;
+      color: #00ffcc;
+      font-size: 13px;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(0,255,200,0.7);
+    }
+
+    /* Tap-to-start overlay */
+    #start-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(3,3,12,0.75);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      cursor: pointer;
+      border-radius: 18px;
+      gap: 16px;
+    }
+    #start-overlay .tap-icon {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: rgba(0,255,200,0.12);
+      border: 2px solid rgba(0,255,200,0.5);
+      display: flex; align-items: center; justify-content: center;
+      animation: tapPulse 2s infinite;
+      box-shadow: 0 0 30px rgba(0,255,200,0.3);
+    }
+    @keyframes tapPulse {
+      0%,100% { transform: scale(1); box-shadow: 0 0 20px rgba(0,255,200,0.3); }
+      50% { transform: scale(1.1); box-shadow: 0 0 40px rgba(0,255,200,0.5); }
+    }
+    #start-overlay .tap-icon svg { width: 28px; fill: #00ffcc; }
+    #start-overlay .tap-text {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      color: rgba(0,255,200,0.8);
+      letter-spacing: 4px;
+      text-shadow: 0 0 10px rgba(0,255,200,0.5);
+    }
+  </style>
+</head>
+<body>
+<div id="sim-container">
+  <canvas id="simulador"></canvas>
+  <div id="scanlines"></div>
+  <div id="flash"></div>
+
+  <div id="sync-popup">
+    <div class="sync-title">MESMO ALCANCE!</div>
+    <div class="sync-formula">R = v₀² · sin(2θ) / g</div>
+    <div class="sync-subtitle">ÂNGULOS COMPLEMENTARES</div>
+  </div>
+
+  <div id="panel">
+    <div class="panel-header">
+      <span><span class="live-dot"></span>MODO AUTO DEMO</span>
+      <span>SINC. COMPLEMENTAR [ON]</span>
+    </div>
+
+    <div class="slider-label-row">
+      <span>θ MIN: 15°</span>
+      <span>ÂNGULO DE LANÇAMENTO</span>
+      <span>θ MAX: 40°</span>
+    </div>
+    <div class="slider-track">
+      <div class="slider-fill" id="s-fill" style="width:50%"></div>
+      <div class="slider-thumb" id="s-thumb" style="left:50%"></div>
+    </div>
+
+    <div class="values-grid">
+      <div class="val-box">
+        <span class="val-label">Voo Baixo (θ)</span>
+        <span class="val-num c-cyan" id="val-theta">27.5°</span>
+      </div>
+      <div class="val-box">
+        <span class="val-label">Voo Alto (90-θ)</span>
+        <span class="val-num c-magenta" id="val-comp">62.5°</span>
+      </div>
+      <div class="val-box">
+        <span class="val-label">Alcance</span>
+        <span class="val-num c-white" id="val-range">0.0 m</span>
+      </div>
+    </div>
+
+    <div class="counter-row">
+      <span>PARES SINCRONIZADOS</span>
+      <span class="counter-val" id="sync-count">00</span>
+    </div>
+  </div>
+
+  <div id="start-overlay" id="start-overlay">
+    <div class="tap-icon">
+      <svg viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+    </div>
+    <div class="tap-text">TOQUE PARA ATIVAR SOM</div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  AUDIO ENGINE
+// ══════════════════════════════════════════════════════
+class AudioEngine {
+  constructor() {
+    this.ctx = null;
+    this.masterGain = null;
+  }
+
+  init() {
+    if (this.ctx) return;
+    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    this.masterGain = this.ctx.createGain();
+    this.masterGain.gain.value = 1.0;
+    this.masterGain.connect(this.ctx.destination);
+    this._startAmbient();
+  }
+
+  _connect(node) {
+    node.connect(this.masterGain);
+  }
+
+  _startAmbient() {
+    const c = this.ctx;
+    // Sub-bass beat
+    [55, 55.4].forEach(f => {
+      const o = c.createOscillator();
+      const g = c.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.value = 0.025;
+      o.connect(g); this._connect(g);
+      o.start();
+    });
+    // High shimmer
+    const shimmer = c.createOscillator();
+    const shimGain = c.createGain();
+    shimmer.type = 'sine'; shimmer.frequency.value = 880;
+    shimGain.gain.value = 0.007;
+    shimmer.connect(shimGain); this._connect(shimGain);
+    shimmer.start();
+  }
+
+  playLaunch(highPitch = false) {
+    if (!this.ctx) return;
+    const c = this.ctx;
+    const freq = highPitch ? 900 : 450;
+
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    const filter = c.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = freq;
+    filter.Q.value = 4;
+
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq * 2.2, c.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.4, c.currentTime + 0.35);
+
+    gain.gain.setValueAtTime(0.0, c.currentTime);
+    gain.gain.linearRampToValueAtTime(0.07, c.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.35);
+
+    osc.connect(filter); filter.connect(gain); this._connect(gain);
+    osc.start(c.currentTime); osc.stop(c.currentTime + 0.35);
+  }
+
+  playImpact() {
+    if (!this.ctx) return;
+    const c = this.ctx;
+    const bufSize = Math.floor(c.sampleRate * 0.12);
+    const buf = c.createBuffer(1, bufSize, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 6);
+    }
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const gain = c.createGain();
+    gain.gain.value = 0.22;
+    const filter = c.createBiquadFilter();
+    filter.type = 'lowpass'; filter.frequency.value = 450;
+    src.connect(filter); filter.connect(gain); this._connect(gain);
+    src.start();
+  }
+
+  playSyncChord() {
+    if (!this.ctx) return;
+    const c = this.ctx;
+    // C major chord spread across octaves — very satisfying
+    const notes = [130.81, 261.63, 329.63, 392.00, 523.25, 659.25];
+    notes.forEach((freq, i) => {
+      setTimeout(() => {
+        const osc = c.createOscillator();
+        const gain = c.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0, c.currentTime);
+        gain.gain.linearRampToValueAtTime(0.11, c.currentTime + 0.025);
+        gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.9);
+        osc.connect(gain); this._connect(gain);
+        osc.start(c.currentTime); osc.stop(c.currentTime + 0.9);
+      }, i * 55);
+    });
+  }
+
+  scheduleImpact(delayMs) {
+    setTimeout(() => this.playImpact(), delayMs);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  CANVAS SETUP
+// ══════════════════════════════════════════════════════
+const canvas = document.getElementById('simulador');
+const ctx = canvas.getContext('2d');
+canvas.width = 450;
+canvas.height = 800;
+
+const audio = new AudioEngine();
+const overlay = document.getElementById('start-overlay');
+const flashEl = document.getElementById('flash');
+const popupEl = document.getElementById('sync-popup');
+const uiFill  = document.getElementById('s-fill');
+const uiThumb = document.getElementById('s-thumb');
+const uiTheta = document.getElementById('val-theta');
+const uiComp  = document.getElementById('val-comp');
+const uiRange = document.getElementById('val-range');
+const uiCount = document.getElementById('sync-count');
+
+overlay.addEventListener('click', () => {
+  audio.init();
+  overlay.style.transition = 'opacity 0.5s';
+  overlay.style.opacity = '0';
+  setTimeout(() => overlay.remove(), 500);
+});
+
+// ══════════════════════════════════════════════════════
+//  PHYSICS CONSTANTS
+// ══════════════════════════════════════════════════════
+const G     = 0.45;
+const V0    = 13.5;   // tuned so max range (θ=40°) ≈ 399px, fits 450px canvas
+const START_X = 38;
+const START_Y = 590;  // ground line; panel sits below this
+
+// ══════════════════════════════════════════════════════
+//  STARFIELD
+// ══════════════════════════════════════════════════════
+const stars = Array.from({ length: 200 }, () => ({
+  x: Math.random() * canvas.width,
+  y: Math.random() * START_Y * 0.85,
+  r: Math.random() * 1.4 + 0.2,
+  phase: Math.random() * Math.PI * 2,
+  speed: Math.random() * 0.018 + 0.004,
+}));
+
+// ══════════════════════════════════════════════════════
+//  TRAIL PARTICLE
+// ══════════════════════════════════════════════════════
+class TrailParticle {
+  constructor(angleDeg, color, glowColor) {
+    this.x = START_X; this.y = START_Y;
+    this.lx = START_X; this.ly = START_Y;
+    const r = angleDeg * Math.PI / 180;
+    this.vx = V0 * Math.cos(r);
+    this.vy = -V0 * Math.sin(r);
+    this.color = color;
+    this.glow = glowColor;
+    this.active = true;
+  }
+  update() {
+    if (!this.active) return;
+    this.lx = this.x; this.ly = this.y;
+    this.vy += G;
+    this.x += this.vx; this.y += this.vy;
+    if (this.y >= START_Y) { this.y = START_Y; this.active = false; }
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.moveTo(this.lx, this.ly);
+    ctx.lineTo(this.x, this.y);
+    ctx.strokeStyle = this.color;
+    ctx.lineWidth = 3.5;
+    ctx.lineCap = 'round';
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = this.glow;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  EXPLOSION PARTICLE
+// ══════════════════════════════════════════════════════
+class Spark {
+  constructor(x, y, color, big = false) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = big ? Math.random() * 6 + 2 : Math.random() * 3 + 0.5;
+    this.x = x; this.y = y;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed - (big ? 3.5 : 1.5);
+    this.life = 1.0;
+    this.decay = big ? (Math.random() * 0.025 + 0.015) : (Math.random() * 0.04 + 0.025);
+    this.size = big ? Math.random() * 4 + 2 : Math.random() * 2 + 0.5;
+    this.color = color;
+  }
+  update() {
+    this.x += this.vx; this.y += this.vy;
+    this.vy += 0.12;
+    this.vx *= 0.97;
+    this.life -= this.decay;
+  }
+  draw() {
+    if (this.life <= 0) return;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.globalAlpha = this.life;
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = this.color;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.shadowBlur = 0;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+let trails = [];
+let sparks = [];
+let timeEngine = 0;
+let syncCount = 0;
+let beatFrame = 0;
+const BEAT_INTERVAL = 90;  // ~1.5s at 60fps — rhythm for launch + impact sounds
+
+// ══════════════════════════════════════════════════════
+//  DRAW HELPERS
+// ══════════════════════════════════════════════════════
+function drawStarfield() {
+  stars.forEach(s => {
+    s.phase += s.speed;
+    const alpha = 0.2 + 0.8 * ((Math.sin(s.phase) + 1) / 2);
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(190, 210, 255, ${alpha.toFixed(2)})`;
+    ctx.fill();
+  });
+}
+
+function drawNebula(t) {
+  // Two slowly drifting nebula blobs
+  const cx1 = 160 + Math.sin(t * 0.07) * 40;
+  const cy1 = 200 + Math.cos(t * 0.05) * 30;
+  const g1 = ctx.createRadialGradient(cx1, cy1, 0, cx1, cy1, 180);
+  g1.addColorStop(0, 'rgba(0, 80, 100, 0.08)');
+  g1.addColorStop(1, 'transparent');
+  ctx.fillStyle = g1; ctx.fillRect(0, 0, canvas.width, START_Y);
+
+  const cx2 = 310 + Math.sin(t * 0.06 + 2) * 50;
+  const cy2 = 320 + Math.cos(t * 0.04 + 1) * 40;
+  const g2 = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, 150);
+  g2.addColorStop(0, 'rgba(80, 0, 120, 0.07)');
+  g2.addColorStop(1, 'transparent');
+  ctx.fillStyle = g2; ctx.fillRect(0, 0, canvas.width, START_Y);
+}
+
+function drawGrid() {
+  ctx.save();
+  // Perspective grid below ground
+  const gridW = 60;
+  const gridH = 28;
+  ctx.strokeStyle = 'rgba(0, 255, 200, 0.06)';
+  ctx.lineWidth = 0.6;
+  for (let x = 0; x <= canvas.width; x += gridW) {
+    ctx.beginPath(); ctx.moveTo(x, START_Y); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = START_Y; y <= canvas.height; y += gridH) {
+    const fade = 1 - (y - START_Y) / (canvas.height - START_Y);
+    ctx.strokeStyle = `rgba(0, 255, 200, ${(0.06 * fade).toFixed(3)})`;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawGroundLine() {
+  const grad = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  grad.addColorStop(0,   'rgba(0,255,200,0)');
+  grad.addColorStop(0.08,'rgba(0,255,200,0.9)');
+  grad.addColorStop(0.92,'rgba(0,255,200,0.9)');
+  grad.addColorStop(1,   'rgba(0,255,200,0)');
+  ctx.beginPath();
+  ctx.moveTo(0, START_Y); ctx.lineTo(canvas.width, START_Y);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = 2;
+  ctx.shadowBlur = 18; ctx.shadowColor = '#00ffcc';
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+}
+
+function drawLauncher(a1Deg, a2Deg) {
+  ctx.save();
+  ctx.translate(START_X, START_Y);
+
+  const drawBarrel = (angleDeg, col) => {
+    ctx.save();
+    ctx.rotate(-angleDeg * Math.PI / 180);
+    const gr = ctx.createLinearGradient(0, -3, 30, 3);
+    gr.addColorStop(0, col);
+    gr.addColorStop(1, col.replace('1)', '0.1)').replace('#', 'rgba(').replace('cc', ',0.1)'));
+    ctx.fillStyle = col;
+    ctx.shadowBlur = 14; ctx.shadowColor = col;
+    ctx.beginPath();
+    ctx.roundRect(2, -3, 30, 6, 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.restore();
+  };
+
+  drawBarrel(a2Deg, '#ff44ff');
+  drawBarrel(a1Deg, '#00ffcc');
+
+  // Hub
+  ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.shadowBlur = 24; ctx.shadowColor = '#fff';
+  ctx.fill(); ctx.shadowBlur = 0;
+
+  // Ring
+  ctx.beginPath(); ctx.arc(0, 0, 13, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 1.5; ctx.stroke();
+
+  ctx.restore();
+}
+
+function drawAngleArcs(a1Deg, a2Deg) {
+  ctx.save();
+  ctx.translate(START_X, START_Y);
+  ctx.font = '10px Orbitron, monospace';
+  ctx.textAlign = 'left';
+
+  const drawArc = (angleDeg, r, col) => {
+    ctx.beginPath();
+    ctx.arc(0, 0, r, -angleDeg * Math.PI / 180, 0);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const midAngle = -(angleDeg / 2) * Math.PI / 180;
+    const lx = Math.cos(midAngle) * (r + 14);
+    const ly = Math.sin(midAngle) * (r + 14) + 4;
+    ctx.fillStyle = col;
+    ctx.shadowBlur = 8; ctx.shadowColor = col;
+    ctx.fillText(angleDeg.toFixed(0) + '°', lx, ly);
+    ctx.shadowBlur = 0;
+  };
+
+  drawArc(a1Deg, 52, 'rgba(0,255,200,0.55)');
+  drawArc(a2Deg, 72, 'rgba(255,68,255,0.55)');
+
+  ctx.restore();
+}
+
+function drawTarget(tx, t) {
+  const pulse = (Math.sin(t * 4) + 1) * 0.5;
+  ctx.save();
+  ctx.translate(tx, START_Y);
+
+  // Outer glow ring
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 28 + pulse * 10, 7 + pulse * 3, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = `rgba(255,255,255,${0.12 + pulse * 0.2})`;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Middle ring
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 18, 5, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Center fill
+  ctx.beginPath();
+  ctx.ellipse(0, 0, 10, 3, 0, 0, Math.PI * 2);
+  ctx.fillStyle = '#fff';
+  ctx.shadowBlur = 30; ctx.shadowColor = '#fff';
+  ctx.fill(); ctx.shadowBlur = 0;
+
+  // Crosshair lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 1;
+  [[-42, -20], [20, 42]].forEach(([s, e]) => {
+    ctx.beginPath(); ctx.moveTo(s, 0); ctx.lineTo(e, 0); ctx.stroke();
+  });
+
+  ctx.restore();
+}
+
+function spawnImpact(tx, big = false) {
+  const count = big ? 80 : 28;
+  const colors = big
+    ? ['#00ffcc', '#ff44ff', '#ffffff', '#aaffee', '#ff99ff']
+    : ['#00ffcc', '#ff44ff', '#ffffff'];
+  for (let i = 0; i < count; i++) {
+    sparks.push(new Spark(tx, START_Y, colors[i % colors.length], big));
+  }
+  if (big) {
+    // Extra ring of white sparks
+    for (let i = 0; i < 20; i++) {
+      sparks.push(new Spark(tx, START_Y, '#ffffff', false));
+    }
+  }
+}
+
+function triggerSync(tx) {
+  syncCount++;
+  uiCount.textContent = String(syncCount).padStart(2, '0');
+
+  // Flash
+  flashEl.style.opacity = '0.55';
+  setTimeout(() => { flashEl.style.opacity = '0'; }, 130);
+
+  // Popup
+  popupEl.classList.remove('show');
+  void popupEl.offsetWidth; // reflow
+  popupEl.classList.add('show');
+
+  // Big impact
+  spawnImpact(tx, true);
+
+  audio.playSyncChord();
+}
+
+// ══════════════════════════════════════════════════════
+//  MAIN ANIMATION LOOP
+// ══════════════════════════════════════════════════════
+let frameNo = 0;
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Ghost trail fade
+  ctx.fillStyle = 'rgba(4, 4, 14, 0.22)';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Background layers (drawn under trails)
+  drawNebula(timeEngine);
+  drawStarfield();
+  drawGrid();
+  drawGroundLine();
+
+  // ─── AUTOMATION ───
+  timeEngine += 0.013;
+  const wave = (Math.sin(timeEngine) + 1) / 2;
+  const theta    = 15 + 25 * wave;       // 15° → 40°
+  const thetaComp = 90 - theta;
+
+  const rangePixels = (V0 * V0 * Math.sin(2 * theta * Math.PI / 180)) / G;
+  const targetX = START_X + rangePixels;
+
+  // ─── UI UPDATE ───
+  const pct = (wave * 100).toFixed(1);
+  uiFill.style.width = pct + '%';
+  uiThumb.style.left = pct + '%';
+  uiTheta.textContent = theta.toFixed(1) + '°';
+  uiComp.textContent = thetaComp.toFixed(1) + '°';
+  uiRange.textContent = (rangePixels / 10).toFixed(2) + ' m';
+
+  // ─── VISUAL ELEMENTS ───
+  drawAngleArcs(theta, thetaComp);
+  drawTarget(targetX, timeEngine);
+  drawLauncher(theta, thetaComp);
+
+  // ─── EMIT TRAIL PARTICLES ───
+  trails.push(new TrailParticle(theta,     '#00ffcc', '#00ffcc'));
+  trails.push(new TrailParticle(thetaComp, '#ff44ff', '#ff44ff'));
+
+  // ─── SOUND BEATS (periodic launch + impact rhythm) ───
+  beatFrame++;
+  if (beatFrame >= BEAT_INTERVAL) {
+    beatFrame = 0;
+    audio.playLaunch(false);
+    setTimeout(() => audio.playLaunch(true), 60);
+
+    // Schedule impact sound based on physics flight time
+    const flightFrames = (2 * V0 * Math.sin(theta * Math.PI / 180)) / G;
+    const flightMs     = flightFrames * (1000 / 60);
+    audio.scheduleImpact(flightMs);
+
+    // Small visual impact every beat
+    setTimeout(() => spawnImpact(targetX, false), flightMs);
+  }
+
+  // ─── SYNC CELEBRATION (every ~4s = every ~3 beats) ───
+  const beatCount = Math.floor(frameNo / BEAT_INTERVAL);
+  if (frameNo > 0 && frameNo % (BEAT_INTERVAL * 3) === 0) {
+    const flightFrames = (2 * V0 * Math.sin(theta * Math.PI / 180)) / G;
+    const delay = flightFrames * (1000 / 60);
+    setTimeout(() => triggerSync(targetX), delay);
+  }
+
+  // ─── UPDATE PARTICLES ───
+  for (let i = trails.length - 1; i >= 0; i--) {
+    trails[i].update();
+    trails[i].draw();
+    if (!trails[i].active) trails.splice(i, 1);
+  }
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    sparks[i].update();
+    sparks[i].draw();
+    if (sparks[i].life <= 0) sparks.splice(i, 1);
+  }
+
+  frameNo++;
+}
+
+animate();
+</script>
+</body>
+</html>
