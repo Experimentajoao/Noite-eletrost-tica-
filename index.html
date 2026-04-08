@@ -17,10 +17,10 @@
 }
 
 * { box-sizing: border-box; }
-body { 
-  margin: 0; padding: 0; font-family: 'Cormorant Garamond', serif; 
-  background: var(--sky-deep); color: var(--text-primary); 
-  height: 100vh; overflow: hidden; display: flex; 
+body {
+  margin: 0; padding: 0; font-family: 'Cormorant Garamond', serif;
+  background: var(--sky-deep); color: var(--text-primary);
+  height: 100vh; height: 100svh; overflow: hidden; display: flex;
 }
 
 #panel-stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
@@ -63,9 +63,9 @@ body {
 }
 
 /* ═══ MAIN CONTENT ═══ */
-.main-content { 
-  flex: 1; height: 100vh; position: relative; z-index: 5; 
-  display: flex; flex-direction: column; overflow: hidden; 
+.main-content {
+  flex: 1; height: 100vh; height: 100svh; position: relative; z-index: 5;
+  display: flex; flex-direction: column; overflow: hidden;
 }
 .topbar { 
   padding: 15px 30px; display: none; align-items: center; justify-content: space-between;
@@ -936,14 +936,13 @@ function initPuzzle(){
             </div>
           )}
 
-          <div style={{ flex: 1, minHeight: 0, display: "flex", justifyContent: "center", alignItems: "center", padding: "15px", position: "relative" }}>
-             {/* 🔴 AQUI ESTÁ A CORREÇÃO MÁGICA DOS EVENTOS DO MOUSE/TOUCH 🔴 */}
-             <canvas ref={canvasRef} width={W} height={H} 
+          <div style={{ flex: 1, minHeight: "150px", display: "flex", justifyContent: "center", alignItems: "center", padding: "15px", position: "relative", overflow: "hidden" }}>
+             <canvas ref={canvasRef} width={W} height={H}
                 onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
                 onTouchStart={onDown} onTouchMove={onMove} onTouchEnd={onUp}
                 style={{
-                  maxWidth: "100%", maxHeight: "100%", width: "100%", height: "100%",
-                  borderRadius: "16px", objectFit: "contain",
+                  maxWidth: "100%", maxHeight: "100%", width: "auto", height: "auto",
+                  borderRadius: "16px",
                   cursor: dragging !== null ? "grabbing" : "grab",
                   boxShadow: "0 15px 50px rgba(0,0,0,0.8), 0 0 0 1px rgba(74,144,204,0.2)",
                   touchAction: "pan-y"
