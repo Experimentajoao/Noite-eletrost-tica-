@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Noite Estrelada — Laboratório de Física</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
 <style>
 /* ═══ DESIGN SYSTEM & SIDEBAR ═══ */
 :root {
@@ -365,7 +365,7 @@ function initSim(){
     var scriptEl = document.getElementById('campo-babel');
     if(scriptEl) {
       var code = scriptEl.textContent;
-      var out = Babel.transform(code, {presets:['react']}).code;
+      var out = Babel.transform(code, {presets:[['react',{runtime:'classic'}]]}).code;
       new Function(out)();
     }
   } catch(e) {
